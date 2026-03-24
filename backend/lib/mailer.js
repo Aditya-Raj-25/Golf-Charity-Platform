@@ -8,11 +8,11 @@ const sendWelcomeEmail = async (toEmail) => {
     return { success: false, error: msg };
   }
 
-  // Force IPv4 and manual host settings to bypass Render IPv16 network issues
+  // Force IPv4 and use port 587 (STARTTLS) for better cloud compatibility
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Use SSL
+    port: 587,
+    secure: false, // Use STARTTLS
     family: 4, // Force IPv4
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
@@ -42,9 +42,9 @@ const sendLoginEmail = async (toEmail) => {
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4, // Force IPv4
+    port: 587,
+    secure: false,
+    family: 4,
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
@@ -73,9 +73,9 @@ const sendDrawResultEmail = async (toEmail, matches, amount) => {
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    family: 4, // Force IPv4
+    port: 587,
+    secure: false,
+    family: 4,
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
