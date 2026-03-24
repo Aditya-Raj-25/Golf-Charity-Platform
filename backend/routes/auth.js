@@ -12,6 +12,14 @@ router.post('/welcome', async (req, res) => {
   res.json({ message: 'Welcome email queued' });
 });
 
+// Hook from frontend after login to send notification
+router.post('/login-notification', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  await sendLoginEmail(email);
+  res.json({ message: 'Login notification queued' });
+});
+
 // Update subscription status
 router.post('/subscribe', requireAuth, async (req, res) => {
   const { data, error } = await supabase
