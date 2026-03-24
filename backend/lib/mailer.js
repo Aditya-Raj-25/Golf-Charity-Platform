@@ -1,99 +1,83 @@
 require('dotenv').config();
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+
+const getApiKey = () => process.env.SENDGRID_API_KEY || process.env.EMAIL_PASS; // Fallback if user put it in EMAIL_PASS
+const getFromEmail = () => process.env.EMAIL_USER || 'adityaraj12jan23@gmail.com';
 
 const sendWelcomeEmail = async (toEmail) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    const msg = 'Skipping Welcome Email: EMAIL_USER or EMAIL_PASS not set in environment.';
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    const msg = 'Skipping Welcome Email: SENDGRID_API_KEY not set in environment.';
     console.warn(msg);
     return { success: false, error: msg };
   }
 
-  // Hardcode Gmail SMTP IPv4 address to bypass Render DNS/IPv6 routing issues
-  const transporter = nodemailer.createTransport({
-    host: '142.250.31.108', // smtp.gmail.com IPv4
-    port: 465,
-    secure: true, 
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    tls: { rejectUnauthorized: false } // Bypass certificate issue for IP-based host
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  sgMail.setApiKey(apiKey);
+  const msg = {
     to: toEmail,
+    from: getFromEmail(),
     subject: 'Welcome to Golf Charity Platform!',
     text: 'Thank you for joining our platform. Subscribe today to participate in our weekly draws and support your favorite charities!'
   };
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('Welcome email sent to:', toEmail);
+    await sgMail.send(msg);
+    console.log('Welcome email sent via SendGrid to:', toEmail);
     return { success: true };
   } catch (err) {
-    console.error('Error sending welcome email:', err);
+    console.error('Error sending welcome email via SendGrid:', err.response ? err.response.body : err);
     return { success: false, error: err.message };
   }
 };
 
 const sendLoginEmail = async (toEmail) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    const msg = 'Skipping Login Email: EMAIL_USER or EMAIL_PASS not set in environment.';
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    const msg = 'Skipping Login Email: SENDGRID_API_KEY not set in environment.';
     console.warn(msg);
     return { success: false, error: msg };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: '142.250.31.108',
-    port: 465,
-    secure: true,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    tls: { rejectUnauthorized: false }
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  sgMail.setApiKey(apiKey);
+  const msg = {
     to: toEmail,
+    from: getFromEmail(),
     subject: 'New Login to your Golf Charity Portal',
     text: `Hello, this is a notification that a login was recently performed on your account at ${new Date().toLocaleString()}. If this wasn't you, please secure your account.`
   };
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('Login notification sent to:', toEmail);
+    await sgMail.send(msg);
+    console.log('Login notification sent via SendGrid to:', toEmail);
     return { success: true };
   } catch (err) {
-    console.error('Error sending login notification:', err);
+    console.error('Error sending login notification via SendGrid:', err.response ? err.response.body : err);
     return { success: false, error: err.message };
   }
 };
 
 const sendDrawResultEmail = async (toEmail, matches, amount) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    const msg = 'Skipping Draw Result Email: EMAIL_USER or EMAIL_PASS not set in environment.';
-    console.warn(msg);
-    return { success: false, error: msg };
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    console.warn('Skipping Draw Result Email: SENDGRID_API_KEY not set.');
+    return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: '142.250.31.108',
-    port: 465,
-    secure: true,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-    tls: { rejectUnauthorized: false }
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  sgMail.setApiKey(apiKey);
+  const msg = {
     to: toEmail,
+    from: getFromEmail(),
     subject: 'Golf Charity Platform - Draw Results!',
     text: matches >= 3 
       ? `Congratulations! You matched ${matches} numbers and won $${amount}! Log in to your dashboard to claim your prize.`
       : `The recent draw has been completed. Unfortunately, you didn't match enough numbers this time. Better luck next time!`
   };
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('Draw result email sent to:', toEmail);
-    return { success: true };
+    await sgMail.send(msg);
+    console.log('Draw result email sent via SendGrid to:', toEmail);
   } catch (err) {
-    console.error('Error sending draw email:', err);
-    return { success: false, error: err.message };
+    console.error('Error sending draw email via SendGrid:', err.response ? err.response.body : err);
   }
 };
 
