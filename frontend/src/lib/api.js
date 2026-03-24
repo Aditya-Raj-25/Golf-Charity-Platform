@@ -2,7 +2,7 @@ import axios from 'axios';
 import { supabase } from './supabaseClient';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://golf-charity-backend-pku8.onrender.com/api',
+  baseURL: 'https://golf-charity-backend-pku8.onrender.com/api',
 });
 
 // Inject auth token

@@ -28,28 +28,36 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 // Get profile status
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase
+    // 1. Fetch profile as an array first to avoid coercion errors
+    const { data: profiles, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', req.user.id)
-      .single();
+      .eq('id', req.user.id);
 
-    if (error && error.code === 'PGRST116') {
-      // Profile doesn't exist, let's create it (for legacy users)
-      const { data: newProfile, error: createError } = await supabase
-        .from('profiles')
-        .insert({ id: req.user.id, email: req.user.email })
-        .select()
-        .single();
-      
-      if (createError) return res.status(400).json({ error: createError.message });
-      return res.json(newProfile);
+    if (fetchError) return res.status(400).json({ error: fetchError.message });
+
+    // 2. If profile exists, return it
+    if (profiles && profiles.length > 0) {
+      return res.json(profiles[0]);
     }
 
-    if (error) return res.status(400).json({ error: error.message });
-    res.json(data);
+    // 3. If missing, create it (backfill for legacy users)
+    console.log(`Auto-creating profile for missing user: ${req.user.id}`);
+    const { data: newProfile, error: createError } = await supabase
+      .from('profiles')
+      .insert({ id: req.user.id, email: req.user.email })
+      .select()
+      .single();
+    
+    if (createError) {
+      console.error('Failed to create profile:', createError);
+      return res.status(400).json({ error: createError.message });
+    }
+    
+    res.json(newProfile);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Unexpected profile error:', err);
+    res.status(500).json({ error: 'Internal server error while fetching profile' });
   }
 });
 
