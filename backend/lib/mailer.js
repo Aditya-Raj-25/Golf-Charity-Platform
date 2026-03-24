@@ -1,16 +1,17 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-
 const sendWelcomeEmail = async (toEmail) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('Skipping Welcome Email: EMAIL_USER or EMAIL_PASS not set in environment.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  });
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: toEmail,
@@ -26,7 +27,16 @@ const sendWelcomeEmail = async (toEmail) => {
 };
 
 const sendLoginEmail = async (toEmail) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('Skipping Login Email: EMAIL_USER or EMAIL_PASS not set in environment.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  });
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: toEmail,
@@ -42,7 +52,16 @@ const sendLoginEmail = async (toEmail) => {
 };
 
 const sendDrawResultEmail = async (toEmail, matches, amount) => {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('Skipping Draw Result Email: EMAIL_USER or EMAIL_PASS not set in environment.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  });
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: toEmail,
