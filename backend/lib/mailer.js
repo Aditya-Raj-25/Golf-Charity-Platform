@@ -8,13 +8,13 @@ const sendWelcomeEmail = async (toEmail) => {
     return { success: false, error: msg };
   }
 
-  // Attempt port 2525 (sometimes open on cloud providers who block 465/587)
+  // Hardcode Gmail SMTP IPv4 address to bypass Render DNS/IPv6 routing issues
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 2525,
-    secure: false, 
-    family: 4, 
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    host: '142.250.31.108', // smtp.gmail.com IPv4
+    port: 465,
+    secure: true, 
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    tls: { rejectUnauthorized: false } // Bypass certificate issue for IP-based host
   });
 
   const mailOptions = {
@@ -41,11 +41,11 @@ const sendLoginEmail = async (toEmail) => {
   }
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 2525,
-    secure: false,
-    family: 4,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    host: '142.250.31.108',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    tls: { rejectUnauthorized: false }
   });
 
   const mailOptions = {
@@ -72,11 +72,11 @@ const sendDrawResultEmail = async (toEmail, matches, amount) => {
   }
 
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 2525,
-    secure: false,
-    family: 4,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    host: '142.250.31.108',
+    port: 465,
+    secure: true,
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    tls: { rejectUnauthorized: false }
   });
 
   const mailOptions = {
