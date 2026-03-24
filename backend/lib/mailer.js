@@ -1,0 +1,49 @@
+require('dotenv').config();
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+const sendWelcomeEmail = async (toEmail) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: toEmail,
+    subject: 'Welcome to Golf Charity Platform!',
+    text: 'Thank you for joining our platform. Subscribe today to participate in our weekly draws and support your favorite charities!'
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Welcome email sent to:', toEmail);
+  } catch (err) {
+    console.error('Error sending welcome email:', err);
+  }
+};
+
+const sendDrawResultEmail = async (toEmail, matches, amount) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: toEmail,
+    subject: 'Golf Charity Platform - Draw Results!',
+    text: matches >= 3 
+      ? `Congratulations! You matched ${matches} numbers and won $${amount}! Log in to your dashboard to claim your prize.`
+      : `The recent draw has been completed. Unfortunately, you didn't match enough numbers this time. Better luck next time!`
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Draw result email sent to:', toEmail);
+  } catch (err) {
+    console.error('Error sending draw email:', err);
+  }
+};
+
+module.exports = {
+  sendWelcomeEmail,
+  sendDrawResultEmail
+};

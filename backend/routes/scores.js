@@ -1,0 +1,47 @@
+const express = require('express');
+const router = express.Router();
+const supabase = require('../lib/supabase');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+router.get('/', requireAuth, async (req, res) => {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('*')
+    .eq('user_id', req.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data || []);
+});
+
+router.post('/', requireAuth, async (req, res) => {
+  const { score, date } = req.body;
+  if (!score || score < 1 || score > 45 || !date) {
+    return res.status(400).json({ error: 'Invalid score or date' });
+  }
+
+  // Enforce Max 5: get current count
+  const { data: scores, error: countErr } = await supabase
+    .from('scores')
+    .select('id')
+    .eq('user_id', req.user.id)
+    .order('created_at', { ascending: true });
+
+  if (countErr) return res.status(400).json({ error: countErr.message });
+
+  // If >= 5, delete the oldest
+  if (scores && scores.length >= 5) {
+    const idsToDelete = scores.slice(0, scores.length - 4).map(s => s.id);
+    await supabase.from('scores').delete().in('id', idsToDelete);
+  }
+
+  const { data, error } = await supabase
+    .from('scores')
+    .insert([{ user_id: req.user.id, score, date }])
+    .select();
+
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ message: 'Score added successfully', score: data[0] });
+});
+
+module.exports = router;

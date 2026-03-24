@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-golf-100: #e6f4ea;
+  --color-golf-500: #1e8e3e;
+  --color-golf-600: #137333;
+  --color-golf-900: #0d4a22;
+  --color-gold-400: #fbbc04;
+}
+
+body {
+  background-color: #f8f9fa;
+  color: #202124;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}
