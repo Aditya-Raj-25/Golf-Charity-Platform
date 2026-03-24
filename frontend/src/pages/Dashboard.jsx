@@ -35,6 +35,12 @@ export default function Dashboard() {
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading your dashboard...</div>;
+  if (!profile) return (
+    <div className="p-8 text-center text-red-500">
+      <p className="font-bold">Error loading profile data.</p>
+      <p className="text-sm mt-2">The backend API connection failed. Ensure your VITE_API_URL is configured in your Vercel deployment and the backend is live.</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
