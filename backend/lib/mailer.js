@@ -8,8 +8,12 @@ const sendWelcomeEmail = async (toEmail) => {
     return { success: false, error: msg };
   }
 
+  // Force IPv4 and manual host settings to bypass Render IPv16 network issues
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Use SSL
+    family: 4, // Force IPv4
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
@@ -31,12 +35,16 @@ const sendWelcomeEmail = async (toEmail) => {
 
 const sendLoginEmail = async (toEmail) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Skipping Login Email: EMAIL_USER or EMAIL_PASS not set in environment.');
-    return;
+    const msg = 'Skipping Login Email: EMAIL_USER or EMAIL_PASS not set in environment.';
+    console.warn(msg);
+    return { success: false, error: msg };
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4, // Force IPv4
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
@@ -49,19 +57,25 @@ const sendLoginEmail = async (toEmail) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log('Login notification sent to:', toEmail);
+    return { success: true };
   } catch (err) {
     console.error('Error sending login notification:', err);
+    return { success: false, error: err.message };
   }
 };
 
 const sendDrawResultEmail = async (toEmail, matches, amount) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Skipping Draw Result Email: EMAIL_USER or EMAIL_PASS not set in environment.');
-    return;
+    const msg = 'Skipping Draw Result Email: EMAIL_USER or EMAIL_PASS not set in environment.';
+    console.warn(msg);
+    return { success: false, error: msg };
   }
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4, // Force IPv4
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
@@ -76,8 +90,10 @@ const sendDrawResultEmail = async (toEmail, matches, amount) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log('Draw result email sent to:', toEmail);
+    return { success: true };
   } catch (err) {
     console.error('Error sending draw email:', err);
+    return { success: false, error: err.message };
   }
 };
 
