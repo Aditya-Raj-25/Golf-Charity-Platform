@@ -5,8 +5,9 @@ const { sendWelcomeEmail } = require('../lib/mailer');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // Hook from frontend after signup to send email
-router.post('/welcome', requireAuth, async (req, res) => {
-  const email = req.user.email;
+router.post('/welcome', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
   await sendWelcomeEmail(email);
   res.json({ message: 'Welcome email queued' });
 });

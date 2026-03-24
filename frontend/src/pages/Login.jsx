@@ -21,7 +21,7 @@ export default function Login() {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         // Trigger welcome email via backend
-        await api.post('/auth/welcome');
+        await api.post('/auth/welcome', { email });
         alert('Signup successful! Welcome email sent. Please log in.');
         setIsSignUp(false);
       } else {
