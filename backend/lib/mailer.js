@@ -41,6 +41,24 @@ const sendLoginEmail = async (toEmail) => {
   }
 };
 
+const sendDrawResultEmail = async (toEmail, matches, amount) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: toEmail,
+    subject: 'Golf Charity Platform - Draw Results!',
+    text: matches >= 3 
+      ? `Congratulations! You matched ${matches} numbers and won $${amount}! Log in to your dashboard to claim your prize.`
+      : `The recent draw has been completed. Unfortunately, you didn't match enough numbers this time. Better luck next time!`
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Draw result email sent to:', toEmail);
+  } catch (err) {
+    console.error('Error sending draw email:', err);
+  }
+};
+
 module.exports = {
   sendWelcomeEmail,
   sendDrawResultEmail,
