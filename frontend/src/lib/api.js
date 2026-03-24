@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { supabase } from './supabaseClient';
 
+const isLocal = window.location.hostname === 'localhost';
+
 const api = axios.create({
-  baseURL: 'https://golf-charity-backend-pku8.onrender.com/api',
+  baseURL: isLocal ? 'http://localhost:3001/api' : 'https://golf-charity-backend-pku8.onrender.com/api',
 });
 
 // Inject auth token
