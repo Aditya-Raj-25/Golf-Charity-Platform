@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
-const { sendWelcomeEmail } = require('../lib/mailer');
+const { sendWelcomeEmail, sendLoginEmail } = require('../lib/mailer');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // Hook from frontend after signup to send email
