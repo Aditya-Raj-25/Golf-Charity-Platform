@@ -3,8 +3,9 @@ const nodemailer = require('nodemailer');
 
 const sendWelcomeEmail = async (toEmail) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('Skipping Welcome Email: EMAIL_USER or EMAIL_PASS not set in environment.');
-    return;
+    const msg = 'Skipping Welcome Email: EMAIL_USER or EMAIL_PASS not set in environment.';
+    console.warn(msg);
+    return { success: false, error: msg };
   }
 
   const transporter = nodemailer.createTransport({
@@ -21,8 +22,10 @@ const sendWelcomeEmail = async (toEmail) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log('Welcome email sent to:', toEmail);
+    return { success: true };
   } catch (err) {
     console.error('Error sending welcome email:', err);
+    return { success: false, error: err.message };
   }
 };
 

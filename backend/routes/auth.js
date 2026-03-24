@@ -12,6 +12,17 @@ router.post('/welcome', async (req, res) => {
   res.json({ message: 'Welcome email queued' });
 });
 
+// Diagnostic route for email testing
+router.get('/test-email', async (req, res) => {
+  const email = req.query.email || 'adityaraj12jan23@gmail.com';
+  const result = await sendWelcomeEmail(email);
+  res.json({ 
+    message: 'Test email result', 
+    ...result,
+    tip: 'If this says Invalid Login, double check your Gmail App Password and make sure 2FA is on.'
+  });
+});
+
 // Hook from frontend after login to send notification
 router.post('/login-notification', async (req, res) => {
   const { email } = req.body;
