@@ -6,6 +6,7 @@ import { Trophy, CreditCard, Activity, Heart, AlertCircle, CheckCircle2 } from '
 export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchProfile();
@@ -16,6 +17,7 @@ export default function Dashboard() {
       const { data } = await api.get('/auth/profile');
       setProfile(data);
     } catch (err) {
+      setError(err.response?.data?.error || err.message);
       console.error(err);
     } finally {
       setLoading(false);
@@ -35,10 +37,11 @@ export default function Dashboard() {
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading your dashboard...</div>;
-  if (!profile) return (
+  if (error) return (
     <div className="p-8 text-center text-red-500">
       <p className="font-bold">Error loading profile data.</p>
-      <p className="text-sm mt-2">The backend API connection failed. Ensure your VITE_API_URL is configured in your Vercel deployment and the backend is live.</p>
+      <p className="text-sm mt-2">{error}</p>
+      <p className="text-xs mt-4 text-gray-400">If this persists, try signing out and signing up with a new email.</p>
     </div>
   );
 
