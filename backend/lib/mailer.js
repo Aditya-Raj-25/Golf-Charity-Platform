@@ -8,12 +8,12 @@ const sendWelcomeEmail = async (toEmail) => {
     return { success: false, error: msg };
   }
 
-  // Force IPv4 and use port 587 (STARTTLS) for better cloud compatibility
+  // Attempt port 2525 (sometimes open on cloud providers who block 465/587)
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS
-    family: 4, // Force IPv4
+    port: 2525,
+    secure: false, 
+    family: 4, 
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
   });
 
@@ -42,7 +42,7 @@ const sendLoginEmail = async (toEmail) => {
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
+    port: 2525,
     secure: false,
     family: 4,
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
@@ -73,7 +73,7 @@ const sendDrawResultEmail = async (toEmail, matches, amount) => {
 
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
+    port: 2525,
     secure: false,
     family: 4,
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
