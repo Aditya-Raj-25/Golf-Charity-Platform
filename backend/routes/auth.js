@@ -8,7 +8,7 @@ const { requireAuth } = require('../middleware/authMiddleware');
 router.post('/welcome', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  await sendWelcomeEmail(email);
+  sendWelcomeEmail(email); // Fire and forget
   res.json({ message: 'Welcome email queued' });
 });
 
@@ -16,7 +16,7 @@ router.post('/welcome', async (req, res) => {
 router.post('/login-notification', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  await sendLoginEmail(email);
+  sendLoginEmail(email); // Fire and forget
   res.json({ message: 'Login notification queued' });
 });
 
