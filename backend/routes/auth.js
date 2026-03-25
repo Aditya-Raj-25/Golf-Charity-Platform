@@ -53,7 +53,7 @@ router.get('/profile', requireAuth, async (req, res) => {
         *,
         user_charities (
           contribution_pct,
-          charities (name, impact_unit, impact_multiplier)
+          charities (name)
         )
       `)
       .eq('id', req.user.id)
