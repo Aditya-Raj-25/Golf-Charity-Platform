@@ -6,6 +6,7 @@ import { Trophy, CreditCard, Activity, Heart, AlertCircle, CheckCircle2 } from '
 export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [latestDraw, setLatestDraw] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -16,11 +17,13 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [pRes, dRes] = await Promise.all([
+      const [pRes, dRes, sRes] = await Promise.all([
         api.get('/auth/profile'),
-        api.get('/draws')
+        api.get('/draws'),
+        api.get('/auth/stats')
       ]);
       setProfile(pRes.data);
+      setStats(sRes.data);
       if (dRes.data && dRes.data.length > 0) {
         setLatestDraw(dRes.data[0]);
       }
@@ -81,39 +84,48 @@ export default function Dashboard() {
 
       {profile.is_subscribed && (
          <div className="grid md:grid-cols-2 gap-6">
+            {/* Dynamic Community Impact Section */}
             <div className="bg-emerald-600 rounded-3xl p-6 text-white shadow-lg overflow-hidden relative">
               <div className="relative z-10">
                 <h3 className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-2">My Community Impact</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">1.2k</span>
-                  <span className="text-emerald-200 text-sm font-medium">Mangroves Planted</span>
+                  <span className="text-4xl font-black">
+                     {profile.user_charities?.[0] 
+                        ? (profile.user_charities[0].contribution_pct <= 20 ? '4' : profile.user_charities[0].contribution_pct <= 50 ? '12' : '25')
+                        : '0'}
+                  </span>
+                  <span className="text-emerald-200 text-sm font-medium">
+                    {profile.user_charities?.[0]?.charities?.name?.includes('Green') ? 'Mangroves' : profile.user_charities?.[0]?.charities?.name?.includes('Kids') ? 'Meals' : 'Hours'} Planted
+                  </span>
                 </div>
-                <div className="mt-4 flex gap-4 text-xs font-bold">
-                  <span className="bg-emerald-500/30 px-3 py-1 rounded-full border border-emerald-400/30">LIFETIME HERO</span>
-                  <span className="bg-emerald-500/30 px-3 py-1 rounded-full border border-emerald-400/30">TOP 5% PLACEMENT</span>
+                <div className="mt-4">
+                  <p className="text-emerald-100 text-sm font-medium">
+                    Supporting: <span className="font-bold text-white uppercase ml-1">
+                      {profile.user_charities?.[0]?.charities?.name || 'Selected Cause'}
+                    </span>
+                  </p>
+                  <p className="text-emerald-200/60 text-[10px] mt-1 italic font-bold">
+                    AT {profile.user_charities?.[0]?.contribution_pct || 10}% CONTRIBUTION LEVEL
+                  </p>
                 </div>
               </div>
               <Heart className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-500/20" />
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+            {/* Live Jackpot / Prize Pool Section */}
+            <div className="bg-gray-900 rounded-3xl p-6 text-white shadow-lg flex flex-col justify-between">
               <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Latest Draw Results</h3>
-                {latestDraw ? (
-                  <div className="flex gap-3 mt-4">
-                    {[latestDraw.num1, latestDraw.num2, latestDraw.num3, latestDraw.num4, latestDraw.num5].map((n, i) => (
-                      <div key={i} className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 italic text-sm mt-4">No draws recorded yet.</p>
-                )}
+                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Live Weekly Jackpot</h3>
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-gray-500 text-2xl font-bold">£</span>
+                  <span className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums">
+                    {stats?.total_prize_pool ? stats.total_prize_pool.toLocaleString() : '5,000'}
+                  </span>
+                </div>
               </div>
-              <div className="mt-6 flex justify-between items-center text-xs">
-                <span className="text-gray-400">NEXT DRAW IN: <strong className="text-gray-900 ml-1">4D 12H</strong></span>
-                <Link to="/draws" className="text-emerald-600 font-bold hover:underline">VIEW HISTORY &rarr;</Link>
+              <div className="mt-6 flex justify-between items-center text-xs font-bold text-gray-500">
+                <span>ACTIVE ENTRANTS: <strong className="text-white ml-1">{stats?.active_players || 0}</strong></span>
+                <span className="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full">JACKPOT GROWING</span>
               </div>
             </div>
          </div>

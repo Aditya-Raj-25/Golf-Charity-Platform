@@ -44,39 +44,59 @@ router.post('/subscribe', requireAuth, async (req, res) => {
   res.json({ message: 'Successfully subscribed', profile: data });
 });
 
-// Get profile status
+// Update: Include Charity and Stats
 router.get('/profile', requireAuth, async (req, res) => {
   try {
-    // 1. Fetch profile as an array first to avoid coercion errors
-    const { data: profiles, error: fetchError } = await supabase
+    const { data: profile, error: pError } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('id', req.user.id);
-
-    if (fetchError) return res.status(400).json({ error: fetchError.message });
-
-    // 2. If profile exists, return it
-    if (profiles && profiles.length > 0) {
-      return res.json(profiles[0]);
-    }
-
-    // 3. If missing, create it (backfill for legacy users)
-    console.log(`Auto-creating profile for missing user: ${req.user.id}`);
-    const { data: newProfile, error: createError } = await supabase
-      .from('profiles')
-      .insert({ id: req.user.id, email: req.user.email })
-      .select()
+      .select(`
+        *,
+        user_charities (
+          contribution_pct,
+          charities (name, impact_unit, impact_multiplier)
+        )
+      `)
+      .eq('id', req.user.id)
       .single();
-    
-    if (createError) {
-      console.error('Failed to create profile:', createError);
-      return res.status(400).json({ error: createError.message });
+
+    if (pError && pError.code === 'PGRST116') {
+      // Auto-create profile if missing
+      const { data: newProfile, error: cError } = await supabase
+        .from('profiles')
+        .insert({ id: req.user.id, email: req.user.email })
+        .select()
+        .single();
+      if (cError) return res.status(400).json({ error: cError.message });
+      return res.json(newProfile);
     }
-    
-    res.json(newProfile);
+
+    if (pError) return res.status(400).json({ error: pError.message });
+    res.json(profile);
   } catch (err) {
-    console.error('Unexpected profile error:', err);
-    res.status(500).json({ error: 'Internal server error while fetching profile' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Global Stats for the "Real" feeling
+router.get('/stats', async (req, res) => {
+  try {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_subscribed', true);
+
+    if (error) throw error;
+
+    const basePrize = 5000;
+    const perUser = 25 * 0.40; // 40% of subscription goes to pool
+    
+    res.json({
+      active_players: count || 0,
+      total_prize_pool: basePrize + ((count || 0) * perUser),
+      last_draw_date: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

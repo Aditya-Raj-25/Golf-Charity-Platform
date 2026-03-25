@@ -38,16 +38,20 @@ export default function Charity() {
     }
   };
 
+  const [justSaved, setJustSaved] = useState(false);
+
   const handleUpdate = async () => {
     if (!activeCharityId) return alert('Please select a charity first');
     setSaving(true);
+    setJustSaved(false);
     try {
       await api.post('/charities/select', { 
         charity_id: activeCharityId, 
         contribution_pct: selectedPct 
       });
       await fetchData();
-      alert('Stewardship settings updated!');
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 3000);
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     } finally {
