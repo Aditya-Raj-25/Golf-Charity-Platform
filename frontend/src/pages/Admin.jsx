@@ -213,30 +213,34 @@ export default function Admin() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Email</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Subscription</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Role</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Joined</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {users.map(u => (
-                    <tr key={u.id}>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{u.email}</td>
-                      <td className="py-3 px-4">
-                        {u.is_subscribed 
-                          ? <span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span>
-                          : <span className="text-gray-500 text-xs font-bold px-2 py-1 bg-gray-100 rounded-full">Inactive</span>}
-                      </td>
-                      <td className="py-3 px-4">
-                        {u.is_admin 
-                          ? <span className="text-red-600 text-xs font-bold px-2 py-1 bg-red-50 rounded-full border border-red-200">Admin</span>
-                          : <span className="text-gray-500 text-sm">User</span>}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <tr className="bg-gray-50">
+                      <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Email</th>
+                      <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Subscription</th>
+                      <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Supporting</th>
+                      <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Role</th>
                     </tr>
-                  ))}
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td className="py-3 px-4 text-sm font-medium text-gray-900">{u.email}</td>
+                        <td className="py-3 px-4">
+                          {u.is_subscribed 
+                            ? <span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span>
+                            : <span className="text-gray-500 text-xs font-bold px-2 py-1 bg-gray-100 rounded-full">Inactive</span>}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-xs text-gray-600">
+                            {u.user_charities?.[0]?.charities?.name || 'No selection'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {u.is_admin 
+                            ? <span className="text-red-600 text-xs font-bold px-2 py-1 bg-red-50 rounded-full border border-red-200">Admin</span>
+                            : <span className="text-gray-500 text-sm">User</span>}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

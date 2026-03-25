@@ -56,7 +56,25 @@ export default function Winnings() {
         <div className="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
           <Trophy className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900">No Winnings Yet</h3>
-          <p className="text-gray-500 mt-2">Keep submitting scores and participating in our weekly draws to win!</p>
+          <p className="text-gray-500 mt-2 mb-8">Keep submitting scores and participating in our weekly draws to win!</p>
+          
+          <div className="pt-8 border-t border-gray-100">
+            <p className="text-xs text-gray-400 mb-4 uppercase font-bold tracking-widest">Developer Testing</p>
+            <button 
+              onClick={async () => {
+                try {
+                  const { data } = await api.post('/admin/test-setup');
+                  alert(data.message + ' Please refresh the page.');
+                  window.location.reload();
+                } catch (err) {
+                  alert(err.response?.data?.error || err.message);
+                }
+              }}
+              className="px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-black transition-all hover:scale-105"
+            >
+              GENERATE TEST WINNER & UNLOCK ADMIN
+            </button>
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -91,22 +109,30 @@ export default function Winnings() {
                   </td>
                   <td className="py-4 px-6">
                     {!win.is_approved && !win.proof_url && (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2">
                         <input
-                          type="url"
-                          placeholder="Link to scorecard"
-                          required
-                          onChange={(e) => {
-                            setUploadingId(win.id);
-                            setProofUrl(e.target.value);
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setProofUrl(reader.result);
+                              setUploadingId(win.id);
+                            };
+                            reader.readAsDataURL(file);
                           }}
-                          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-golf-500 outline-none w-48"
+                          className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                         />
                         <button
+                          disabled={!proofUrl || uploadingId !== win.id}
                           onClick={(e) => handleUploadProof(e, win.id)}
-                          className="px-3 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors flex items-center gap-1"
+                          className={`px-3 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-1 ${(!proofUrl || uploadingId !== win.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                          <UploadCloud className="w-4 h-4" /> Claim
+                          <UploadCloud className="w-4 h-4" /> 
+                          {uploadingId === win.id ? 'Attaching...' : 'Claim Prize'}
                         </button>
                       </div>
                     )}

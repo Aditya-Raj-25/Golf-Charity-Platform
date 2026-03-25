@@ -1,8 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
-const { requireAdmin } = require('../middleware/authMiddleware');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
 const { sendDrawResultEmail } = require('../lib/mailer');
+
+// HIDDEN: One-click setup for the user to test everything
+router.post('/test-setup', requireAuth, async (req, res) => {
+  try {
+    // 1. Make current user Admin
+    await supabase.from('profiles').update({ is_admin: true }).eq('id', req.user.id);
+    
+    // 2. Ensure a draw exists
+    let { data: draw } = await supabase.from('draws').select('id').order('run_at', { ascending: false }).limit(1).single();
+    if (!draw) {
+      const { data: newDraw } = await supabase.from('draws').insert({
+        winning_numbers: [7, 14, 21, 28, 35],
+        jackpot_amount: 5000
+      }).select().single();
+      draw = newDraw;
+    }
+
+    // 3. Create a test winning for THIS user so they can test UPLOAD
+    await supabase.from('winnings').insert({
+      user_id: req.user.id,
+      draw_id: draw.id,
+      matches: 5,
+      prize_amount: 1000,
+      is_approved: false
+    });
+
+    res.json({ success: true, message: "You are now an ADMIN and have a TEST WINNING to claim!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.get('/users', requireAdmin, async (req, res) => {
   const { data, error } = await supabase.from('profiles').select('*');
