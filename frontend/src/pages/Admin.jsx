@@ -9,7 +9,7 @@ export default function Admin() {
   const [newCharityName, setNewCharityName] = useState('');
   const [newCharityDesc, setNewCharityDesc] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('draw');
   const [simResults, setSimResults] = useState(null);
   const [simulating, setSimulating] = useState(false);
   const [submittingCharity, setSubmittingCharity] = useState(false);
@@ -134,6 +134,17 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this user? This will remove all their scores and winnings.')) return;
+    try {
+      await api.delete(`/admin/users/${id}`);
+      await fetchAdminData();
+      setSuccessMsg('User deleted successfully');
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500">Loading admin data...</div>;
 
   return (
@@ -153,7 +164,7 @@ export default function Admin() {
       </div>
 
       <div className="flex space-x-2 border-b border-gray-200">
-        {['winnings', 'charities', 'users'].map((tab) => (
+        {['draw', 'winnings', 'charities', 'users'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -260,8 +271,14 @@ export default function Admin() {
                   <tr key={c.id}>
                     <td className="py-3 px-4 font-bold text-gray-900">{c.name}</td>
                     <td className="py-3 px-4 text-sm text-gray-500">{c.description}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 flex items-center justify-between">
                       <span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span>
+                      <button 
+                        onClick={() => handleDeleteCharity(c.id)}
+                        className="text-red-400 hover:text-red-600 transition-colors p-1"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -304,13 +321,21 @@ export default function Admin() {
                             ? <span className="text-red-600 text-xs font-bold px-2 py-1 bg-red-50 rounded-full border border-red-200">Admin</span>
                             : <span className="text-gray-500 text-sm">User</span>}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 flex items-center gap-4">
                           <button 
                             onClick={() => setEditingUserScores({ email: u.email, scores: u.scores || [] })}
                             className="text-blue-600 hover:underline text-xs font-bold"
                           >
                             Edit Scores
                           </button>
+                          {!u.is_admin && (
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="text-red-400 hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

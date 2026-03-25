@@ -72,23 +72,30 @@ router.post('/charities', requireAdmin, async (req, res) => {
 
 router.delete('/charities/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
-  console.log(`[ADMIN] Attempting to delete charity: ${id}`);
   try {
-    // 1. Unlink users first (foreign key constraint)
-    const { error: unlinkError } = await supabase.from('user_charities').delete().eq('charity_id', id);
-    if (unlinkError) console.error('  Unlink Error:', unlinkError.message);
-    
+    // 1. Unlink users first
+    await supabase.from('user_charities').delete().eq('charity_id', id);
     // 2. Delete charity
-    const { error: deleteError } = await supabase.from('charities').delete().eq('id', id);
-    if (deleteError) {
-      console.error('  Delete Error:', deleteError.message);
-      throw deleteError;
-    }
-    
-    console.log('  SUCCESS');
+    const { error } = await supabase.from('charities').delete().eq('id', id);
+    if (error) throw error;
     res.json({ success: true });
   } catch (err) {
-    console.error('  FATAL Delete Charity Error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete('/users/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Delete dependent data
+    await supabase.from('scores').delete().eq('user_id', id);
+    await supabase.from('winnings').delete().eq('user_id', id);
+    await supabase.from('user_charities').delete().eq('user_id', id);
+    // 2. Delete profile
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
