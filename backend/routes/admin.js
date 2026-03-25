@@ -16,9 +16,9 @@ router.post('/test-setup', requireAuth, async (req, res) => {
     if (!draw) {
       console.log('No draw found, creating one...');
       const { data: newDraw, error: dError } = await supabase.from('draws').insert({
-        winning_numbers: [7, 14, 21, 28, 35],
-        jackpot_amount: 5000,
-        winners_evaluated: true
+        num1: 7, num2: 14, num3: 21, num4: 28, num5: 35,
+        admin_id: req.user.id,
+        run_at: new Date().toISOString()
       }).select().single();
       
       if (dError) throw dError;

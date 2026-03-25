@@ -15,7 +15,8 @@ export default function Winnings() {
   const fetchWinnings = async () => {
     try {
       const { data } = await api.get('/winnings');
-      setWinnings(data || []);
+      // Filter out winnings with null/missing draw references
+      setWinnings((data || []).filter(w => w.draw));
     } catch (err) {
       console.error('Fetch winnings error:', err);
     } finally {
@@ -91,7 +92,7 @@ export default function Winnings() {
             <tbody className="divide-y divide-gray-100">
               {winnings.map((win) => (
                 <tr key={win.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-6 text-gray-600">{new Date(win.draw.run_at).toLocaleDateString()}</td>
+                  <td className="py-4 px-6 text-gray-600">{win.draw?.run_at ? new Date(win.draw.run_at).toLocaleDateString() : 'N/A'}</td>
                   <td className="py-4 px-6">
                     <span className="inline-flex px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-bold text-sm">
                       {win.matches} / 5
