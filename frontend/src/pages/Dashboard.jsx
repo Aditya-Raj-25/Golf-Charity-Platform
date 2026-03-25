@@ -17,11 +17,13 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      // Fetch everything, but don't crash if stats/draws fail
       const [pRes, dRes, sRes] = await Promise.all([
         api.get('/auth/profile'),
-        api.get('/draws'),
-        api.get('/auth/stats')
+        api.get('/draws').catch(() => ({ data: [] })),
+        api.get('/auth/stats').catch(() => ({ data: { total_prize_pool: 5000, active_players: 0 } }))
       ]);
+      
       setProfile(pRes.data);
       setStats(sRes.data);
       if (dRes.data && dRes.data.length > 0) {
@@ -29,7 +31,7 @@ export default function Dashboard() {
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message);
-      console.error(err);
+      console.error('Core Dashboard Error:', err);
     } finally {
       setLoading(false);
     }
