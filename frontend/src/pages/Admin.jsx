@@ -179,7 +179,81 @@ export default function Admin() {
 
       <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-sm border border-gray-200 p-8">
         
+        {/* DRAW TAB */}
+        {activeTab === 'draw' && (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <PlayCircle className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Execute Monthly Draw</h2>
+            <p className="text-gray-500 max-w-lg mx-auto mb-8">
+              Running a draw will generate 5 random numbers (1-45), check all active subscriptions, calculate matches, record winnings, and instantly email results to all participants.
+            </p>
+            <div className="flex justify-center gap-4">
+              <button 
+                onClick={handleSimulate}
+                disabled={simulating}
+                className="px-8 py-4 bg-gray-100 text-gray-900 text-lg font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {simulating ? 'SIMULATING...' : 'RUN SIMULATION'}
+              </button>
+              <button 
+                onClick={handleRunDraw}
+                disabled={runningDraw}
+                className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1 disabled:opacity-50"
+              >
+                {runningDraw ? 'EXECUTING...' : 'START DRAW ENGINE'}
+              </button>
+            </div>
 
+            {simResults && (
+              <div className="mt-12 bg-gray-50 rounded-2xl p-8 border border-gray-200 text-left animate-in fade-in slide-in-from-top-4">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Simulation Results (Dry Run)</h3>
+                  <div className="flex gap-2">
+                    {simResults.winning_numbers.map((n, i) => (
+                      <span key={i} className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Pool</p>
+                    <p className="text-2xl font-black text-gray-900">£{simResults.total_pool.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Live Jackpot</p>
+                    <p className="text-2xl font-black text-emerald-600">£{Math.round(simResults.jackpot).toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Winners</p>
+                    <p className="text-2xl font-black text-gray-900">
+                      {Object.values(simResults.simulated_winners).reduce((a, b) => a + b, 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">5 Matches ({simResults.simulated_winners.match5} winners)</span>
+                    <span className="font-bold text-emerald-600">£{Math.round(simResults.prizes.match5_each).toLocaleString()} each</span>
+                  </div>
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">4 Matches ({simResults.simulated_winners.match4} winners)</span>
+                    <span className="font-bold">£{Math.round(simResults.prizes.match4_each).toLocaleString()} each</span>
+                  </div>
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">3 Matches ({simResults.simulated_winners.match3} winners)</span>
+                    <span className="font-bold">£{Math.round(simResults.prizes.match3_each).toLocaleString()} each</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* WINNINGS TAB */}
         {activeTab === 'winnings' && (
