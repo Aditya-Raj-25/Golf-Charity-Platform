@@ -51,9 +51,9 @@ router.get('/profile', requireAuth, async (req, res) => {
       .from('profiles')
       .select(`
         *,
-        user_charities (
+        user_charities!user_id (
           contribution_pct,
-          charities (name)
+          charity:charity_id (name)
         )
       `)
       .eq('id', req.user.id)

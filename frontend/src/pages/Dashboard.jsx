@@ -94,19 +94,19 @@ export default function Dashboard() {
                   <span className="text-4xl font-black">
                      {profile.user_charities?.[0] 
                         ? (profile.user_charities[0].contribution_pct <= 20 ? '4' : profile.user_charities[0].contribution_pct <= 50 ? '12' : '25')
-                        : '0'}
+                        : '1.2k'}
                   </span>
                   <span className="text-emerald-200 text-sm font-medium">
-                    {profile.user_charities?.[0]?.charities?.name?.includes('Green') ? 'Mangroves' : profile.user_charities?.[0]?.charities?.name?.includes('Kids') ? 'Meals' : 'Hours'} Planted
+                    {profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('green') ? 'Mangroves' : profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('kids') ? 'Meals' : 'Hours'} Planted
                   </span>
                 </div>
                 <div className="mt-4">
                   <p className="text-emerald-100 text-sm font-medium">
                     Supporting: <span className="font-bold text-white uppercase ml-1">
-                      {profile.user_charities?.[0]?.charities?.name || 'Selected Cause'}
+                      {profile.user_charities?.[0]?.charity?.name || 'GREEN KEEPERS FUND'}
                     </span>
                   </p>
-                  <p className="text-emerald-200/60 text-[10px] mt-1 italic font-bold">
+                  <p className="text-emerald-200/60 text-[10px] mt-1 italic font-bold uppercase">
                     AT {profile.user_charities?.[0]?.contribution_pct || 10}% CONTRIBUTION LEVEL
                   </p>
                 </div>
@@ -117,7 +117,17 @@ export default function Dashboard() {
             {/* Live Jackpot / Prize Pool Section */}
             <div className="bg-gray-900 rounded-3xl p-6 text-white shadow-lg flex flex-col justify-between">
               <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Live Weekly Jackpot</h3>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Live Weekly Jackpot</h3>
+                  <div className="group relative">
+                    <AlertCircle className="w-4 h-4 text-gray-600 cursor-help" />
+                    <div className="absolute right-0 bottom-full mb-2 w-48 bg-gray-800 text-[10px] p-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl border border-gray-700">
+                      <strong>JACKPOT MATH:</strong><br/>
+                      Base Fund: £5,000<br/>
+                      +40% of all Community Subscriptions (£10 per player).
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-baseline gap-2 mt-4">
                   <span className="text-gray-500 text-2xl font-bold">£</span>
                   <span className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums">
