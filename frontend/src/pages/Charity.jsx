@@ -6,6 +6,9 @@ export default function Charity() {
   const [charities, setCharities] = useState([]);
   const [selectedPct, setSelectedPct] = useState(10);
   const [activeCharityId, setActiveCharityId] = useState(null);
+  const [mySelection, setMySelection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -13,18 +16,23 @@ export default function Charity() {
 
   const fetchData = async () => {
     try {
-      const [{ data: cData }, { data: mData }] = await Promise.all([
-        api.get('/charities'),
-        api.get('/charities/my-selection')
+      const [cRes, mRes] = await Promise.all([
+        api.get('/charities').catch(() => ({ data: [] })),
+        api.get('/charities/my-selection').catch(() => ({ data: null }))
       ]);
-      setCharities(cData || []);
+      
+      const cData = cRes.data || [];
+      const mData = mRes.data;
+
+      setCharities(cData);
       setMySelection(mData);
+      
       if (mData) {
         setActiveCharityId(mData.charity_id);
         setSelectedPct(mData.contribution_pct);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
