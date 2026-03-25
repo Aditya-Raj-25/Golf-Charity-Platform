@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
-import { Users, Building, PlayCircle, ShieldCheck } from 'lucide-react';
+import { ChartBar, Users, PlusCircle, Trophy, Settings, Edit2, Check, X, Trash2 } from 'lucide-react';
 
 export default function Admin() {
   const [users, setUsers] = useState([]);

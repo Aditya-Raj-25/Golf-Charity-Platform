@@ -32,6 +32,7 @@ router.post('/test-setup', requireAuth, async (req, res) => {
       user_id: req.user.id,
       draw_id: draw.id,
       matches: 5,
+      matched_numbers: [7, 14, 21, 28, 35],
       prize_amount: 1000,
       is_approved: false
     });
