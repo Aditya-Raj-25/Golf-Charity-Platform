@@ -72,9 +72,17 @@ router.post('/charities', requireAdmin, async (req, res) => {
 
 router.delete('/charities/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { error } = await supabase.from('charities').delete().eq('id', id);
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ success: true });
+  try {
+    // 1. Unlink users first (foreign key constraint)
+    await supabase.from('user_charities').delete().eq('charity_id', id);
+    // 2. Delete charity
+    const { error } = await supabase.from('charities').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete Charity Error:', err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 router.get('/winnings', requireAdmin, async (req, res) => {
@@ -144,19 +152,19 @@ router.post('/draw/simulate', requireAdmin, async (req, res) => {
 });
 
 router.post('/draw', requireAdmin, async (req, res) => {
+  console.log('--- STARTING DRAW ENGINE ---');
   // 1. Generate 5 unique random numbers (1-45)
   const numbers = [];
   while(numbers.length < 5) {
     const r = Math.floor(Math.random() * 45) + 1;
     if(numbers.indexOf(r) === -1) numbers.push(r);
   }
+  console.log('Winning Numbers:', numbers);
   
   // 2. Calculate Prize Pool
   const { count: activeCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true);
   const totalPool = (activeCount || 0) * 25 * 0.40; // PRD: ~40% of subs go to pool
-  
-  const { data: lastDraw } = await supabase.from('draws').select('rollover_amount').order('run_at', { ascending: false }).limit(1).maybeSingle();
-  const rolloverIn = lastDraw?.rollover_amount || 0;
+  console.log('Active Subs:', activeCount, 'Total Pool:', totalPool);
 
   // Create draw record
   const { data: drawData, error: drawError } = await supabase
@@ -173,7 +181,10 @@ router.post('/draw', requireAdmin, async (req, res) => {
     .select()
     .single();
 
-  if (drawError) return res.status(400).json({ error: drawError.message });
+  if (drawError) {
+    console.error('Draw Insert Error:', drawError);
+    return res.status(400).json({ error: drawError.message });
+  }
 
   // 3. Fetch all subscribed users and their latest 5 scores
   const { data: users, error: userError } = await supabase
@@ -181,7 +192,11 @@ router.post('/draw', requireAdmin, async (req, res) => {
     .select('id, email, scores (score)')
     .eq('is_subscribed', true);
 
-  if (userError) return res.status(400).json({ error: userError.message });
+  if (userError) {
+    console.error('User Fetch Error:', userError);
+    return res.status(400).json({ error: userError.message });
+  }
+  console.log('Evaluating users count:', users?.length);
 
   // 4. Evaluate winners
   const winners = [];
@@ -194,6 +209,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
       winners.push({ user, matched, matchedNumbers });
     }
   }
+  console.log('Winners found:', winners.length);
 
   const match5 = winners.filter(w => w.matched === 5);
   const match4 = winners.filter(w => w.matched === 4);
