@@ -72,15 +72,23 @@ router.post('/charities', requireAdmin, async (req, res) => {
 
 router.delete('/charities/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
+  console.log(`[ADMIN] Attempting to delete charity: ${id}`);
   try {
     // 1. Unlink users first (foreign key constraint)
-    await supabase.from('user_charities').delete().eq('charity_id', id);
+    const { error: unlinkError } = await supabase.from('user_charities').delete().eq('charity_id', id);
+    if (unlinkError) console.error('  Unlink Error:', unlinkError.message);
+    
     // 2. Delete charity
-    const { error } = await supabase.from('charities').delete().eq('id', id);
-    if (error) throw error;
+    const { error: deleteError } = await supabase.from('charities').delete().eq('id', id);
+    if (deleteError) {
+      console.error('  Delete Error:', deleteError.message);
+      throw deleteError;
+    }
+    
+    console.log('  SUCCESS');
     res.json({ success: true });
   } catch (err) {
-    console.error('Delete Charity Error:', err);
+    console.error('  FATAL Delete Charity Error:', err);
     res.status(400).json({ error: err.message });
   }
 });

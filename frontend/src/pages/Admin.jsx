@@ -94,10 +94,14 @@ export default function Admin() {
 
   const handleDeleteCharity = async (id) => {
     if (!window.confirm('Are you sure you want to delete this charity?')) return;
+    console.log('Sending delete request for charity:', id);
     try {
-      await api.delete(`/admin/charities/${id}`);
+      const resp = await api.delete(`/admin/charities/${id}`);
+      console.log('Delete response:', resp.data);
       await fetchAdminData();
+      alert('Charity deleted successfully');
     } catch (err) {
+      console.error('Delete error:', err);
       alert(err.response?.data?.error || err.message);
     }
   };
@@ -321,9 +325,10 @@ export default function Admin() {
                       <span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span>
                       <button 
                         onClick={() => handleDeleteCharity(c.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors"
+                        className="text-red-400 hover:text-red-600 transition-colors p-1"
+                        title="Delete Charity"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
