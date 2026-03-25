@@ -5,6 +5,7 @@ import { Users, Building, PlayCircle, ShieldCheck } from 'lucide-react';
 export default function Admin() {
   const [users, setUsers] = useState([]);
   const [charities, setCharities] = useState([]);
+  const [winnings, setWinnings] = useState([]);
   const [newCharityName, setNewCharityName] = useState('');
   const [newCharityDesc, setNewCharityDesc] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,12 +17,14 @@ export default function Admin() {
 
   const fetchAdminData = async () => {
     try {
-      const [{ data: uData }, { data: cData }] = await Promise.all([
+      const [{ data: uData }, { data: cData }, { data: wData }] = await Promise.all([
         api.get('/admin/users'),
-        api.get('/charities')
+        api.get('/charities'),
+        api.get('/admin/winnings')
       ]);
       setUsers(uData || []);
       setCharities(cData || []);
+      setWinnings(wData || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -34,7 +37,18 @@ export default function Admin() {
     
     try {
       const { data } = await api.post('/admin/draw');
-      alert(`Draw complete! Numbers: ${data.draw.num1}, ${data.draw.num2}, ${data.draw.num3}, ${data.draw.num4}, ${data.draw.num5}. Winners evaluated: ${data.winners_evaluated}`);
+      alert(`Draw complete! Numbers: ${data.winning_numbers.join(', ')}. Winners evaluated: ${data.winners_evaluated}`);
+      await fetchAdminData();
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleApproveWinning = async (id) => {
+    try {
+      await api.post(`/admin/winnings/${id}/approve`);
+      await fetchAdminData();
+      alert('Winning approved!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     }
@@ -58,20 +72,20 @@ export default function Admin() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center gap-3 border-b border-gray-200 pb-4">
-        <ShieldCheck className="w-8 h-8 text-red-600" />
+        <ShieldCheck className="w-8 h-8 text-emerald-600" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Control Panel</h1>
-          <p className="text-gray-500 mt-1">Manage draws, charities, and view platform metrics.</p>
+          <p className="text-gray-500 mt-1">Manage draws, charities, and verify winners.</p>
         </div>
       </div>
 
       <div className="flex space-x-2 border-b border-gray-200">
-        {['draw', 'charities', 'users'].map((tab) => (
+        {['draw', 'winnings', 'charities', 'users'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-3 font-semibold text-sm rounded-t-lg capitalize transition-colors ${
-              activeTab === tab ? 'bg-white border-t border-x border-gray-200 text-red-600 -mb-px' : 'text-gray-500 hover:bg-gray-50 border border-transparent border-b-0'
+              activeTab === tab ? 'bg-white border-t border-x border-gray-200 text-emerald-600 -mb-px' : 'text-gray-500 hover:bg-gray-50 border border-transparent border-b-0'
             }`}
           >
             {tab}
@@ -84,19 +98,73 @@ export default function Admin() {
         {/* DRAW TAB */}
         {activeTab === 'draw' && (
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <PlayCircle className="w-10 h-10 text-red-500" />
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <PlayCircle className="w-10 h-10 text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Run Weekly Draw</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Execute Monthly Draw</h2>
             <p className="text-gray-500 max-w-lg mx-auto mb-8">
               Running a draw will generate 5 random numbers (1-45), check all active subscriptions, calculate matches, record winnings, and instantly email results to all participants.
             </p>
             <button 
               onClick={handleRunDraw}
-              className="px-8 py-4 bg-red-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-red-700 transition-colors hover:-translate-y-1"
+              className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1"
             >
-              EXECUTE DRAW
+              START DRAW ENGINE
             </button>
+          </div>
+        )}
+
+        {/* WINNINGS TAB */}
+        {activeTab === 'winnings' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-900 border-b pb-4">Verification Queue</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Winner</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Matches</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Prize</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Proof</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {winnings.map(w => (
+                    <tr key={w.id}>
+                      <td className="py-4 px-4 font-medium text-gray-900">{w.profile?.email}</td>
+                      <td className="py-4 px-4 text-sm text-gray-600">{w.matches} Numbers</td>
+                      <td className="py-4 px-4 font-bold text-emerald-600">${w.prize_amount}</td>
+                      <td className="py-4 px-4">
+                        {w.proof_url ? (
+                          <a href={w.proof_url} target="_blank" rel="noreferrer" className="text-blue-600 underline text-sm">View Proof</a>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">Not uploaded</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        {w.is_approved ? (
+                          <span className="text-green-600 font-bold text-sm bg-green-50 px-2 py-1 rounded">Approved</span>
+                        ) : (
+                          <button 
+                            disabled={!w.proof_url}
+                            onClick={() => handleApproveWinning(w.id)}
+                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                              w.proof_url ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            VERIFY
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {winnings.length === 0 && (
+                    <tr><td colSpan="5" className="py-12 text-center text-gray-400 italic">No winnings recorded yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

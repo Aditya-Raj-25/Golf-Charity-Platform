@@ -79,7 +79,7 @@ export default function Winnings() {
                       {win.matches} / 5
                     </span>
                   </td>
-                  <td className="py-4 px-6 font-bold text-green-600 text-lg">${win.amount}</td>
+                  <td className="py-4 px-6 font-bold text-green-600 text-lg">${win.prize_amount}</td>
                   <td className="py-4 px-6">
                     {win.is_approved ? (
                       <span className="text-green-600 font-medium">Approved & Paid</span>
@@ -91,23 +91,24 @@ export default function Winnings() {
                   </td>
                   <td className="py-4 px-6">
                     {!win.is_approved && !win.proof_url && (
-                      <form onSubmit={(e) => handleUploadProof(e, win.id)} className="flex gap-2">
+                      <div className="flex gap-2">
                         <input
                           type="url"
-                          placeholder="Link to winning scorecard"
+                          placeholder="Link to scorecard"
                           required
-                          value={uploadingId === win.id ? proofUrl : ''}
-                          onChange={(e) => setProofUrl(e.target.value)}
+                          onChange={(e) => {
+                            setUploadingId(win.id);
+                            setProofUrl(e.target.value);
+                          }}
                           className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-golf-500 outline-none w-48"
                         />
                         <button
-                          type="submit"
-                          disabled={uploadingId === win.id}
-                          className="px-3 py-2 bg-golf-600 text-white rounded-lg font-medium hover:bg-golf-500 transition-colors flex items-center gap-1"
+                          onClick={(e) => handleUploadProof(e, win.id)}
+                          className="px-3 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors flex items-center gap-1"
                         >
-                          <UploadCloud className="w-4 h-4" /> Upload
+                          <UploadCloud className="w-4 h-4" /> Claim
                         </button>
-                      </form>
+                      </div>
                     )}
                     {win.proof_url && !win.is_approved && (
                        <a href={win.proof_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm font-medium">View Proof</a>

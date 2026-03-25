@@ -29,17 +29,17 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/dashboard" className="flex items-center gap-2 text-xl font-bold text-golf-600">
+              <Link to="/dashboard" className="flex items-center gap-2 text-xl font-bold text-emerald-600">
                 <Trophy className="h-6 w-6" />
                 Golf Charity
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/dashboard" className="text-gray-600 hover:text-golf-600 px-3 py-2 rounded-md font-medium"><Home className="inline w-4 h-4 mr-1"/>Dashboard</Link>
-              <Link to="/scores" className="text-gray-600 hover:text-golf-600 px-3 py-2 rounded-md font-medium"><User className="inline w-4 h-4 mr-1"/>Scores</Link>
-              <Link to="/charity" className="text-gray-600 hover:text-golf-600 px-3 py-2 rounded-md font-medium"><Heart className="inline w-4 h-4 mr-1"/>Charity</Link>
+              <Link to="/dashboard" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><Home className="inline w-4 h-4 mr-1"/>Dashboard</Link>
+              <Link to="/scores" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><User className="inline w-4 h-4 mr-1"/>Scores</Link>
+              <Link to="/charity" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><Heart className="inline w-4 h-4 mr-1"/>Charity</Link>
               {isAdmin && (
-                <Link to="/admin" className="text-red-600 hover:text-red-700 px-3 py-2 rounded-md font-medium"><Shield className="inline w-4 h-4 mr-1"/>Admin</Link>
+                <Link to="/admin" className="text-emerald-600 hover:text-emerald-700 px-3 py-2 rounded-md font-black border-2 border-emerald-100 bg-emerald-50"><Shield className="inline w-4 h-4 mr-1"/>Admin</Link>
               )}
               <button onClick={handleLogout} className="text-gray-500 hover:text-gray-700 p-2">
                 <LogOut className="h-5 w-5" />

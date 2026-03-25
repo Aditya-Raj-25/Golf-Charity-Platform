@@ -1,21 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { Trophy, CreditCard, Activity, Heart, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function Dashboard() {
   const [profile, setProfile] = useState(null);
+  const [latestDraw, setLatestDraw] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProfile();
+    fetchDashboardData();
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const { data } = await api.get('/auth/profile');
-      setProfile(data);
+      const [pRes, dRes] = await Promise.all([
+        api.get('/auth/profile'),
+        api.get('/draws')
+      ]);
+      setProfile(pRes.data);
+      if (dRes.data && dRes.data.length > 0) {
+        setLatestDraw(dRes.data[0]);
+      }
     } catch (err) {
       setError(err.response?.data?.error || err.message);
       console.error(err);
@@ -62,21 +70,51 @@ export default function Dashboard() {
             <h3 className="text-lg font-bold text-yellow-800">Action Required: Subscribe to Play</h3>
             <p className="text-yellow-700 mt-1 text-sm mb-4">You need an active subscription to be eligible for weekly draws and prizes.</p>
             <button 
-              onClick={handleSubscribe}
+              onClick={() => navigate('/checkout')}
               className="px-5 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-colors shadow-sm"
             >
-              Subscribe Now ($10/mo)
+              Subscribe Now (£25/mo)
             </button>
           </div>
         </div>
       )}
 
       {profile.is_subscribed && (
-         <div className="bg-green-50 border border-green-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-            <CheckCircle2 className="text-green-500 w-8 h-8 shrink-0" />
-            <div>
-              <h3 className="text-lg font-bold text-green-800">Subscription Active</h3>
-              <p className="text-green-700 text-sm">You are eligible for all upcoming draws.</p>
+         <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-emerald-600 rounded-3xl p-6 text-white shadow-lg overflow-hidden relative">
+              <div className="relative z-10">
+                <h3 className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-2">My Community Impact</h3>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black">1.2k</span>
+                  <span className="text-emerald-200 text-sm font-medium">Mangroves Planted</span>
+                </div>
+                <div className="mt-4 flex gap-4 text-xs font-bold">
+                  <span className="bg-emerald-500/30 px-3 py-1 rounded-full border border-emerald-400/30">LIFETIME HERO</span>
+                  <span className="bg-emerald-500/30 px-3 py-1 rounded-full border border-emerald-400/30">TOP 5% PLACEMENT</span>
+                </div>
+              </div>
+              <Heart className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-500/20" />
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Latest Draw Results</h3>
+                {latestDraw ? (
+                  <div className="flex gap-3 mt-4">
+                    {[latestDraw.num1, latestDraw.num2, latestDraw.num3, latestDraw.num4, latestDraw.num5].map((n, i) => (
+                      <div key={i} className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
+                        {n}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic text-sm mt-4">No draws recorded yet.</p>
+                )}
+              </div>
+              <div className="mt-6 flex justify-between items-center text-xs">
+                <span className="text-gray-400">NEXT DRAW IN: <strong className="text-gray-900 ml-1">4D 12H</strong></span>
+                <Link to="/draws" className="text-emerald-600 font-bold hover:underline">VIEW HISTORY &rarr;</Link>
+              </div>
             </div>
          </div>
       )}

@@ -4,9 +4,8 @@ import { Heart, Building, Check } from 'lucide-react';
 
 export default function Charity() {
   const [charities, setCharities] = useState([]);
-  const [mySelection, setMySelection] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [selectedPct, setSelectedPct] = useState(10);
+  const [activeCharityId, setActiveCharityId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -20,6 +19,10 @@ export default function Charity() {
       ]);
       setCharities(cData || []);
       setMySelection(mData);
+      if (mData) {
+        setActiveCharityId(mData.charity_id);
+        setSelectedPct(mData.contribution_pct);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -27,15 +30,16 @@ export default function Charity() {
     }
   };
 
-  const handleSelect = async (charity_id) => {
-    const pct = prompt('Enter contribution percentage (1-100):', mySelection?.contribution_pct || '10');
-    if (!pct || isNaN(pct) || pct < 1 || pct > 100) return alert('Invalid percentage');
-    
+  const handleUpdate = async () => {
+    if (!activeCharityId) return alert('Please select a charity first');
     setSaving(true);
     try {
-      await api.post('/charities/select', { charity_id, contribution_pct: parseInt(pct) });
+      await api.post('/charities/select', { 
+        charity_id: activeCharityId, 
+        contribution_pct: selectedPct 
+      });
       await fetchData();
-      alert('Charity updated successfully!');
+      alert('Stewardship settings updated!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     } finally {
@@ -46,61 +50,108 @@ export default function Charity() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading charities...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center mb-10">
-        <Heart className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Make an Impact</h1>
-        <p className="text-xl text-gray-500 mt-3 max-w-2xl mx-auto">
-          Choose where a portion of your subscription fee goes. Support incredible courses and causes through the game you love.
+    <div className="max-w-5xl mx-auto space-y-12 pb-20">
+      <div className="text-center space-y-4">
+        <div className="inline-flex p-3 bg-emerald-50 rounded-2xl mb-2">
+          <Heart className="w-8 h-8 text-emerald-600" />
+        </div>
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Your Stewardship</h1>
+        <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+          Through the Golf Charity Platform, a portion of your monthly subscription directly supports environmental and social causes. 
+          Choose your primary focus and set your contribution level.
         </p>
       </div>
 
-      {mySelection && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 mb-8 flex items-center justify-between shadow-sm">
-          <div>
-            <h2 className="text-sm font-bold text-red-800 uppercase tracking-widest mb-1">Current Support</h2>
-            <p className="text-lg font-medium text-red-900 flex items-center gap-2">
-              <Check className="w-5 h-5 text-red-500" />
-              You are supporting <strong>{charities.find(c => c.id === mySelection.charity_id)?.name}</strong> with a {mySelection.contribution_pct}% contribution.
-            </p>
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* CHARITY LIST */}
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Available Causes</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {charities.map(charity => {
+              const isSelected = activeCharityId === charity.id;
+              
+              return (
+                <div 
+                  key={charity.id} 
+                  onClick={() => setActiveCharityId(charity.id)}
+                  className={`cursor-pointer group p-6 rounded-2xl transition-all duration-200 border-2 ${
+                    isSelected ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-100 bg-white hover:border-gray-200 shadow-sm'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${
+                    isSelected ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'
+                  }`}>
+                    <Building className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{charity.name}</h3>
+                  <p className="text-gray-500 text-sm line-clamp-3">{charity.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {charities.map(charity => {
-          const isSelected = mySelection?.charity_id === charity.id;
-          
-          return (
-            <div 
-              key={charity.id} 
-              className={`glass-card rounded-2xl p-6 transition-all duration-200 border-2 ${isSelected ? 'border-red-400 bg-red-50/20 shadow-red-100/50' : 'border-transparent hover:border-gray-200'}`}
-            >
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4 text-gray-400">
-                <Building className="w-6 h-6" />
+        {/* IMPACT CALCULATOR */}
+        <div className="space-y-6">
+          <div className="bg-gray-900 text-white rounded-3xl p-8 sticky top-8 shadow-xl">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <span className="w-2 h-6 bg-emerald-500 rounded-full" />
+              Impact Calculator
+            </h2>
+
+            <div className="space-y-8">
+              <div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-400 text-sm">Contribution Level</span>
+                  <span className="text-emerald-400 font-bold">{selectedPct}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  step="5"
+                  value={selectedPct}
+                  onChange={(e) => setSelectedPct(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
+                <div className="flex justify-between mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                  <span>Minimum (10%)</span>
+                  <span>Full (100%)</span>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{charity.name}</h3>
-              <p className="text-gray-500 mb-6 min-h-[48px]">{charity.description}</p>
-              
-              <button
-                onClick={() => handleSelect(charity.id)}
-                disabled={saving}
-                className={`w-full py-3 rounded-xl font-bold transition-colors ${
-                  isSelected 
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900'
-                }`}
+
+              <div className="p-6 bg-gray-800/50 rounded-2xl border border-gray-700">
+                <p className="text-gray-400 text-sm mb-4">Monthly Stewardship Impact</p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-lg flex items-center justify-center font-bold">
+                      {Math.floor(selectedPct * 0.4)}
+                    </div>
+                    <span className="text-sm font-medium">New Mangroves Planted</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center font-bold">
+                       {Math.floor(selectedPct * 1.5)}h
+                    </div>
+                    <span className="text-sm font-medium">Ocean Cleanup Time</span>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleUpdate}
+                disabled={saving || !activeCharityId}
+                className="w-full py-4 bg-emerald-500 text-gray-900 font-black rounded-2xl hover:bg-emerald-400 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSelected ? 'Update Contribution %' : 'Select Charity'}
+                {saving ? 'UPDATING...' : (mySelection?.charity_id === activeCharityId ? 'SAVE CHANGES' : 'CONFIRM SELECTION')}
               </button>
+
+              <p className="text-center text-[10px] text-gray-500 uppercase font-medium">
+                * Based on a standard £25 monthly stewardship fee
+              </p>
             </div>
-          );
-        })}
-        {charities.length === 0 && (
-          <div className="col-span-2 text-center text-gray-500 py-12">
-            No charities available at the moment. Admin will add some soon.
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

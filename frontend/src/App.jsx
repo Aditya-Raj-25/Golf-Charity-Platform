@@ -11,6 +11,7 @@ import Draws from './pages/Draws';
 import Charity from './pages/Charity';
 import Winnings from './pages/Winnings';
 import Admin from './pages/Admin';
+import Checkout from './pages/Checkout';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/draws" element={<Draws />} />
           <Route path="/charity" element={<Charity />} />
           <Route path="/winnings" element={<Winnings />} />
+          <Route path="/checkout" element={<Checkout />} />
         </Route>
 
         <Route element={<ProtectedRoute requireAdmin={true}><Layout /></ProtectedRoute>}>

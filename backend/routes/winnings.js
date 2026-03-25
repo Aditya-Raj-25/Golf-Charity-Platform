@@ -7,7 +7,7 @@ router.get('/', requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('winnings')
     .select(`
-      id, amount, proof_url, matches, is_approved,
+      id, prize_amount, proof_url, matches, is_approved,
       draw:draws (run_at, num1, num2, num3, num4, num5)
     `)
     .eq('user_id', req.user.id);
