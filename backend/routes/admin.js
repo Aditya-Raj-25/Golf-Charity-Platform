@@ -220,7 +220,9 @@ router.post('/draw', requireAdmin, async (req, res) => {
   const prize4 = match4.length > 0 ? (totalPool * 0.35) / match4.length : 0;
   const prize3 = match3.length > 0 ? (totalPool * 0.25) / match3.length : 0;
 
-    // Record winnings
+  // Record winnings
+  for (const w of winners) {
+    const prize = w.matched === 5 ? prize5 : w.matched === 4 ? prize4 : prize3;
     await supabase.from('winnings').insert([{
       user_id: w.user.id,
       draw_id: drawData.id,
