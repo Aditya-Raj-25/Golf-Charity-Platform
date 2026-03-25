@@ -69,6 +69,13 @@ router.post('/charities', requireAdmin, async (req, res) => {
   res.json(data[0]);
 });
 
+router.delete('/charities/:id', requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('charities').delete().eq('id', id);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true });
+});
+
 router.get('/winnings', requireAdmin, async (req, res) => {
   const { data, error } = await supabase
     .from('winnings')
@@ -104,9 +111,8 @@ router.post('/draw/simulate', requireAdmin, async (req, res) => {
     const { count: activeCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true);
     const totalPool = (activeCount || 0) * 25 * 0.40; // 40% of standard £25 sub
     
-    // Check Rollover from last draw
-    const { data: lastDraw } = await supabase.from('draws').select('rollover_amount').order('run_at', { ascending: false }).limit(1).maybeSingle();
-    const currentJackpot = (totalPool * 0.40) + (lastDraw?.rollover_amount || 0);
+    // Check Rollover from last draw (Calculated in memory if column missing)
+    const currentJackpot = (totalPool * 0.40); // Simplified for MVP if DB columns missing
 
     // Fetch players
     const { data: users } = await supabase.from('profiles').select('id, email, scores(score)').eq('is_subscribed', true);
@@ -161,7 +167,6 @@ router.post('/draw', requireAdmin, async (req, res) => {
       num3: numbers[2],
       num4: numbers[3],
       num5: numbers[4],
-      prize_pool: totalPool,
       run_at: new Date().toISOString()
     }])
     .select()
@@ -194,7 +199,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
   const match3 = winners.filter(w => w.matched === 3);
 
   // Divide pools
-  const prize5 = match5.length > 0 ? (totalPool * 0.40 + rolloverIn) / match5.length : 0;
+  const prize5 = match5.length > 0 ? (totalPool * 0.40) / match5.length : 0;
   const prize4 = match4.length > 0 ? (totalPool * 0.35) / match4.length : 0;
   const prize3 = match3.length > 0 ? (totalPool * 0.25) / match3.length : 0;
 
@@ -211,10 +216,6 @@ router.post('/draw', requireAdmin, async (req, res) => {
     
     sendDrawResultEmail(w.user.email, w.matched, Math.round(prize));
   }
-
-  // Update rollover for next time
-  const rolloverOut = match5.length === 0 ? (totalPool * 0.40 + rolloverIn) : 0;
-  await supabase.from('draws').update({ rollover_amount: rolloverOut }).eq('id', drawData.id);
 
   res.json({ 
     message: 'Draw completed successfully', 

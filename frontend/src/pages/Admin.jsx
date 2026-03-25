@@ -12,6 +12,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('draw');
   const [simResults, setSimResults] = useState(null);
   const [simulating, setSimulating] = useState(false);
+  const [submittingCharity, setSubmittingCharity] = useState(false);
+  const [runningDraw, setRunningDraw] = useState(false);
   const [editingUserScores, setEditingUserScores] = useState(null); // { userEmail, scores }
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function Admin() {
   const handleRunDraw = async () => {
     if (!window.confirm('Are you sure you want to run a new draw? This will evaluate all subscribed users and cannot be undone.')) return;
     
+    setRunningDraw(true);
     try {
       const { data } = await api.post('/admin/draw');
       alert(`Draw complete! Numbers: ${data.winning_numbers.join(', ')}. Winners evaluated: ${data.winners_evaluated}`);
@@ -45,6 +48,8 @@ export default function Admin() {
       await fetchAdminData();
     } catch (err) {
       alert(err.response?.data?.error || err.message);
+    } finally {
+      setRunningDraw(false);
     }
   };
 
@@ -72,12 +77,26 @@ export default function Admin() {
 
   const handleAddCharity = async (e) => {
     e.preventDefault();
+    if (submittingCharity) return;
+    setSubmittingCharity(true);
     try {
       await api.post('/admin/charities', { name: newCharityName, description: newCharityDesc });
       setNewCharityName('');
       setNewCharityDesc('');
       await fetchAdminData();
       alert('Charity added successfully');
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSubmittingCharity(false);
+    }
+  };
+
+  const handleDeleteCharity = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this charity?')) return;
+    try {
+      await api.delete(`/admin/charities/${id}`);
+      await fetchAdminData();
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     }
@@ -152,9 +171,10 @@ export default function Admin() {
               </button>
               <button 
                 onClick={handleRunDraw}
-                className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1"
+                disabled={runningDraw}
+                className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1 disabled:opacity-50"
               >
-                START DRAW ENGINE
+                {runningDraw ? 'EXECUTING...' : 'START DRAW ENGINE'}
               </button>
             </div>
 
@@ -275,7 +295,13 @@ export default function Admin() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Description (Short)</label>
                 <input required value={newCharityDesc} onChange={e=>setNewCharityDesc(e.target.value)} className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" />
               </div>
-              <button type="submit" className="px-6 py-2 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 h-[42px]">Add Charity</button>
+              <button 
+                type="submit" 
+                disabled={submittingCharity}
+                className="px-6 py-2 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800 h-[42px] disabled:opacity-50"
+              >
+                {submittingCharity ? 'ADDING...' : 'Add Charity'}
+              </button>
             </form>
 
             <table className="w-full text-left">
@@ -291,7 +317,15 @@ export default function Admin() {
                   <tr key={c.id}>
                     <td className="py-3 px-4 font-bold text-gray-900">{c.name}</td>
                     <td className="py-3 px-4 text-sm text-gray-500">{c.description}</td>
-                    <td className="py-3 px-4"><span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span></td>
+                    <td className="py-3 px-4 flex items-center justify-between">
+                      <span className="text-green-600 text-xs font-bold px-2 py-1 bg-green-50 rounded-full">Active</span>
+                      <button 
+                        onClick={() => handleDeleteCharity(c.id)}
+                        className="text-gray-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
