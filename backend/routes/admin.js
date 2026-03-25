@@ -11,17 +11,24 @@ router.post('/test-setup', requireAuth, async (req, res) => {
     await supabase.from('profiles').update({ is_admin: true }).eq('id', req.user.id);
     
     // 2. Ensure a draw exists
-    let { data: draw } = await supabase.from('draws').select('id').order('run_at', { ascending: false }).limit(1).single();
+    let { data: draw } = await supabase.from('draws').select('id').order('run_at', { ascending: false }).limit(1).maybeSingle();
+    
     if (!draw) {
-      const { data: newDraw } = await supabase.from('draws').insert({
+      console.log('No draw found, creating one...');
+      const { data: newDraw, error: dError } = await supabase.from('draws').insert({
         winning_numbers: [7, 14, 21, 28, 35],
-        jackpot_amount: 5000
+        jackpot_amount: 5000,
+        winners_evaluated: true
       }).select().single();
+      
+      if (dError) throw dError;
       draw = newDraw;
     }
 
+    if (!draw) throw new Error('Could not create or find a draw');
+
     // 3. Create a test winning for THIS user so they can test UPLOAD
-    await supabase.from('winnings').insert({
+    const { error: wError } = await supabase.from('winnings').insert({
       user_id: req.user.id,
       draw_id: draw.id,
       matches: 5,
@@ -29,8 +36,14 @@ router.post('/test-setup', requireAuth, async (req, res) => {
       is_approved: false
     });
 
-    res.json({ success: true, message: "You are now an ADMIN and have a TEST WINNING to claim!" });
+    if (wError) {
+      // If error is duplicate, ignore it
+      if (!wError.message.includes('unique')) throw wError;
+    }
+
+    res.json({ success: true, message: "Success! You are now an ADMIN and have a TEST WINNING to claim!" });
   } catch (err) {
+    console.error('Test Setup Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
