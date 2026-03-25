@@ -238,8 +238,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
     message: 'Draw completed successfully', 
     draw: drawData, 
     winners_evaluated: winners.length,
-    winning_numbers: numbers,
-    rollover_next: rolloverOut
+    winning_numbers: numbers
   });
 });
 
