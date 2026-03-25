@@ -220,9 +220,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
   const prize4 = match4.length > 0 ? (totalPool * 0.35) / match4.length : 0;
   const prize3 = match3.length > 0 ? (totalPool * 0.25) / match3.length : 0;
 
-  // Record winnings
-  for (const w of winners) {
-    const prize = w.matched === 5 ? prize5 : w.matched === 4 ? prize4 : prize3;
+    // Record winnings
     await supabase.from('winnings').insert([{
       user_id: w.user.id,
       draw_id: drawData.id,
@@ -231,7 +229,14 @@ router.post('/draw', requireAdmin, async (req, res) => {
       prize_amount: Math.round(prize * 100) / 100
     }]);
     
-    sendDrawResultEmail(w.user.email, w.matched, Math.round(prize));
+    // 5. Send Email (Optional - don't let email failure break the draw)
+    try {
+      if (w.user.email) {
+        await sendDrawResultEmail(w.user.email, w.matched, Math.round(prize));
+      }
+    } catch (emailErr) {
+      console.error('Failed to send win email to:', w.user.email, emailErr.message);
+    }
   }
 
   res.json({ 
