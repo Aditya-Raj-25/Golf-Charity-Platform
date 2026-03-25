@@ -15,6 +15,14 @@ export default function Admin() {
   const [submittingCharity, setSubmittingCharity] = useState(false);
   const [runningDraw, setRunningDraw] = useState(false);
   const [editingUserScores, setEditingUserScores] = useState(null); // { userEmail, scores }
+  const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => setSuccessMsg(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg]);
 
   useEffect(() => {
     fetchAdminData();
@@ -43,7 +51,7 @@ export default function Admin() {
     setRunningDraw(true);
     try {
       const { data } = await api.post('/admin/draw');
-      alert(`Draw complete! Numbers: ${data.winning_numbers.join(', ')}. Winners evaluated: ${data.winners_evaluated}`);
+      setSuccessMsg(`Draw complete! Winning Numbers: ${data.winning_numbers.join(', ')}`);
       setSimResults(null);
       await fetchAdminData();
     } catch (err) {
@@ -84,7 +92,7 @@ export default function Admin() {
       setNewCharityName('');
       setNewCharityDesc('');
       await fetchAdminData();
-      alert('Charity added successfully');
+      setSuccessMsg('Charity added successfully!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     } finally {
@@ -96,10 +104,9 @@ export default function Admin() {
     if (!window.confirm('Are you sure you want to delete this charity?')) return;
     console.log('Sending delete request for charity:', id);
     try {
-      const resp = await api.delete(`/admin/charities/${id}`);
-      console.log('Delete response:', resp.data);
+      await api.delete(`/admin/charities/${id}`);
       await fetchAdminData();
-      alert('Charity deleted successfully');
+      setSuccessMsg('Charity deleted successfully');
     } catch (err) {
       console.error('Delete error:', err);
       alert(err.response?.data?.error || err.message);
@@ -130,7 +137,13 @@ export default function Admin() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading admin data...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12">
+      {successMsg && (
+        <div className="fixed top-20 right-8 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] animate-in slide-in-from-right-8 fade-in flex items-center gap-2">
+          <Check className="w-5 h-5" />
+          <span className="font-bold">{successMsg}</span>
+        </div>
+      )}
       <div className="flex items-center gap-3 border-b border-gray-200 pb-4">
         <ShieldCheck className="w-8 h-8 text-emerald-600" />
         <div>
