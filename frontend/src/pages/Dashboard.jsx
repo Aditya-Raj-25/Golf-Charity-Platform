@@ -24,6 +24,9 @@ export default function Dashboard() {
         api.get('/auth/stats').catch(() => ({ data: { total_prize_pool: 5000, active_players: 0 } }))
       ]);
       
+      console.log('DEBUG: Profile Response:', pRes.data);
+      console.log('DEBUG: Stats Response:', sRes.data);
+
       setProfile(pRes.data);
       setStats(sRes.data);
       if (dRes.data && dRes.data.length > 0) {
