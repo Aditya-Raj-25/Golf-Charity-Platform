@@ -49,7 +49,15 @@ router.post('/test-setup', requireAuth, async (req, res) => {
 });
 
 router.get('/users', requireAdmin, async (req, res) => {
-  const { data, error } = await supabase.from('profiles').select('*');
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      scores (id, score, date),
+      user_charities (
+        charity:charity_id (name)
+      )
+    `);
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
 });
@@ -87,6 +95,47 @@ router.post('/winnings/:id/approve', requireAdmin, async (req, res) => {
   res.json(data[0]);
 });
 
+// SIMULATION MODE: Preview results before publishing
+router.post('/draw/simulate', requireAdmin, async (req, res) => {
+  try {
+    const numbers = Array.from({length: 5}, () => Math.floor(Math.random() * 45) + 1);
+    
+    // Calculate Pool
+    const { count: activeCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true);
+    const totalPool = (activeCount || 0) * 25 * 0.40; // 40% of standard £25 sub
+    
+    // Check Rollover from last draw
+    const { data: lastDraw } = await supabase.from('draws').select('rollover_amount').order('run_at', { ascending: false }).limit(1).maybeSingle();
+    const currentJackpot = (totalPool * 0.40) + (lastDraw?.rollover_amount || 0);
+
+    // Fetch players
+    const { data: users } = await supabase.from('profiles').select('id, email, scores(score)').eq('is_subscribed', true);
+    
+    let stats = { match5: 0, match4: 0, match3: 0 };
+    for (const user of users) {
+      const userScores = [...new Set(user.scores.map(s => s.score))];
+      const matched = userScores.filter(s => numbers.includes(s)).length;
+      if (matched === 5) stats.match5++;
+      if (matched === 4) stats.match4++;
+      if (matched === 3) stats.match3++;
+    }
+
+    res.json({
+      winning_numbers: numbers,
+      total_pool: totalPool,
+      jackpot: currentJackpot,
+      simulated_winners: stats,
+      prizes: {
+        match5_each: stats.match5 > 0 ? currentJackpot / stats.match5 : 0,
+        match4_each: stats.match4 > 0 ? (totalPool * 0.35) / stats.match4 : 0,
+        match3_each: stats.match3 > 0 ? (totalPool * 0.25) / stats.match3 : 0
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/draw', requireAdmin, async (req, res) => {
   // 1. Generate 5 unique random numbers (1-45)
   const numbers = [];
@@ -95,6 +144,13 @@ router.post('/draw', requireAdmin, async (req, res) => {
     if(numbers.indexOf(r) === -1) numbers.push(r);
   }
   
+  // 2. Calculate Prize Pool
+  const { count: activeCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true);
+  const totalPool = (activeCount || 0) * 25 * 0.40; // PRD: ~40% of subs go to pool
+  
+  const { data: lastDraw } = await supabase.from('draws').select('rollover_amount').order('run_at', { ascending: false }).limit(1).maybeSingle();
+  const rolloverIn = lastDraw?.rollover_amount || 0;
+
   // Create draw record
   const { data: drawData, error: drawError } = await supabase
     .from('draws')
@@ -104,59 +160,88 @@ router.post('/draw', requireAdmin, async (req, res) => {
       num2: numbers[1],
       num3: numbers[2],
       num4: numbers[3],
-      num5: numbers[4]
+      num5: numbers[4],
+      prize_pool: totalPool,
+      run_at: new Date().toISOString()
     }])
     .select()
     .single();
 
   if (drawError) return res.status(400).json({ error: drawError.message });
 
-  // 2. Fetch all subscribed users and their latest 5 scores
+  // 3. Fetch all subscribed users and their latest 5 scores
   const { data: users, error: userError } = await supabase
     .from('profiles')
-    .select(`
-      id, email,
-      scores (score)
-    `)
+    .select('id, email, scores (score)')
     .eq('is_subscribed', true);
 
   if (userError) return res.status(400).json({ error: userError.message });
 
-  // 3. Evaluate each user against the draw
-  let winnersCount = 0;
+  // 4. Evaluate winners
+  const winners = [];
   for (const user of users) {
-    // Only use unique scores for matching (PRD implies matching specific numbers)
     const userScores = [...new Set(user.scores.map(s => s.score))];
-    let matchedNumbers = userScores.filter(s => numbers.includes(s));
-    let matched = matchedNumbers.length;
+    const matchedNumbers = userScores.filter(s => numbers.includes(s));
+    const matched = matchedNumbers.length;
 
-    let prize = 0;
-    if (matched === 3) prize = 50;  
-    if (matched === 4) prize = 500;
-    if (matched === 5) prize = 5000;
-
-    if (prize > 0) {
-      // Record winnings
-      await supabase.from('winnings').insert([{
-        user_id: user.id,
-        draw_id: drawData.id,
-        matches: matched,
-        matched_numbers: matchedNumbers,
-        prize_amount: prize
-      }]);
-
-      // Send email alert
-      sendDrawResultEmail(user.email, matched, prize);
-      winnersCount++;
+    if (matched >= 3) {
+      winners.push({ user, matched, matchedNumbers });
     }
   }
+
+  const match5 = winners.filter(w => w.matched === 5);
+  const match4 = winners.filter(w => w.matched === 4);
+  const match3 = winners.filter(w => w.matched === 3);
+
+  // Divide pools
+  const prize5 = match5.length > 0 ? (totalPool * 0.40 + rolloverIn) / match5.length : 0;
+  const prize4 = match4.length > 0 ? (totalPool * 0.35) / match4.length : 0;
+  const prize3 = match3.length > 0 ? (totalPool * 0.25) / match3.length : 0;
+
+  // Record winnings
+  for (const w of winners) {
+    const prize = w.matched === 5 ? prize5 : w.matched === 4 ? prize4 : prize3;
+    await supabase.from('winnings').insert([{
+      user_id: w.user.id,
+      draw_id: drawData.id,
+      matches: w.matched,
+      matched_numbers: w.matchedNumbers,
+      prize_amount: Math.round(prize * 100) / 100
+    }]);
+    
+    sendDrawResultEmail(w.user.email, w.matched, Math.round(prize));
+  }
+
+  // Update rollover for next time
+  const rolloverOut = match5.length === 0 ? (totalPool * 0.40 + rolloverIn) : 0;
+  await supabase.from('draws').update({ rollover_amount: rolloverOut }).eq('id', drawData.id);
 
   res.json({ 
     message: 'Draw completed successfully', 
     draw: drawData, 
-    winners_evaluated: winnersCount,
-    winning_numbers: numbers 
+    winners_evaluated: winners.length,
+    winning_numbers: numbers,
+    rollover_next: rolloverOut
   });
+});
+
+// SCORE MANAGEMENT: Admin can edit/delete user scores
+router.put('/scores/:id', requireAdmin, async (req, res) => {
+  const { score, date } = req.body;
+  const { data, error } = await supabase
+    .from('scores')
+    .update({ score, date })
+    .eq('id', req.params.id)
+    .select();
+    
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data[0]);
+});
+
+router.delete('/scores/:id', requireAdmin, async (req, res) => {
+  const { error } = await supabase.from('scores').delete().eq('id', req.params.id);
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true });
 });
 
 module.exports = router;

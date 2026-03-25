@@ -9,6 +9,8 @@ export default function Charity() {
   const [mySelection, setMySelection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All');
 
   useEffect(() => {
     fetchData();
@@ -59,6 +61,21 @@ export default function Charity() {
     }
   };
 
+  const filteredCharities = charities.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || 
+                          c.description.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = category === 'All' || c.category === category;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = ['All', 'Environment', 'Social', 'Healthcare', 'Youth'];
+
+  const upcomingEvents = [
+    { id: 1, title: 'Summer Mangrove Gala', date: 'April 15, 2026', charity: 'Green Keepers' },
+    { id: 2, title: 'Charity Open Golf Day', date: 'May 2, 2026', charity: 'Youth Sports' },
+    { id: 3, title: 'Annual Healthcare Fundraiser', date: 'June 10, 2026', charity: 'Medi-Care Hub' }
+  ];
+
   if (loading) return <div className="p-8 text-center text-gray-500">Loading charities...</div>;
 
   return (
@@ -74,12 +91,58 @@ export default function Charity() {
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-4 gap-8">
+        {/* FILTERS SIDEBAR */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Search Causes</label>
+              <input 
+                value={search} onChange={e=>setSearch(e.target.value)}
+                placeholder="Search..."
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Category</label>
+              <div className="space-y-2">
+                {categories.map(cat => (
+                  <button 
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={`block w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors ${category === cat ? 'bg-emerald-500 text-white' : 'hover:bg-gray-50 text-gray-600'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-emerald-900 text-emerald-100 p-6 rounded-3xl shadow-xl space-y-4">
+            <h3 className="font-bold text-white flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              UPCOMING EVENTS
+            </h3>
+            <div className="space-y-4">
+              {upcomingEvents.map(ev => (
+                <div key={ev.id} className="border-l-2 border-emerald-500/30 pl-3 py-1">
+                  <p className="text-[10px] uppercase font-bold text-emerald-400">{ev.date}</p>
+                  <p className="text-sm font-bold text-white leading-tight mt-0.5">{ev.title}</p>
+                  <p className="text-[10px] text-emerald-300">Supported by: {ev.charity}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* CHARITY LIST */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Available Causes</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {charities.map(charity => {
+          <div className="flex justify-between items-center px-1">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Available Causes ({filteredCharities.length})</h2>
+          </div>
+          <div className="grid sm:grid-cols-1 gap-4">
+            {filteredCharities.map(charity => {
               const isSelected = activeCharityId === charity.id;
               
               return (

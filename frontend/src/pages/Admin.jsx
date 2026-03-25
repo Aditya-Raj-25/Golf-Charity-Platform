@@ -10,6 +10,9 @@ export default function Admin() {
   const [newCharityDesc, setNewCharityDesc] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('draw');
+  const [simResults, setSimResults] = useState(null);
+  const [simulating, setSimulating] = useState(false);
+  const [editingUserScores, setEditingUserScores] = useState(null); // { userEmail, scores }
 
   useEffect(() => {
     fetchAdminData();
@@ -38,9 +41,22 @@ export default function Admin() {
     try {
       const { data } = await api.post('/admin/draw');
       alert(`Draw complete! Numbers: ${data.winning_numbers.join(', ')}. Winners evaluated: ${data.winners_evaluated}`);
+      setSimResults(null);
       await fetchAdminData();
     } catch (err) {
       alert(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleSimulate = async () => {
+    setSimulating(true);
+    try {
+      const { data } = await api.post('/admin/draw/simulate');
+      setSimResults(data);
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSimulating(false);
     }
   };
 
@@ -62,6 +78,27 @@ export default function Admin() {
       setNewCharityDesc('');
       await fetchAdminData();
       alert('Charity added successfully');
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleEditScore = async (scoreId, newScore, newDate) => {
+    try {
+      await api.put(`/admin/scores/${scoreId}`, { score: newScore, date: newDate });
+      // Refresh local state
+      const updatedScores = editingUserScores.scores.map(s => s.id === scoreId ? {...s, score: newScore, date: newDate} : s);
+      setEditingUserScores({...editingUserScores, scores: updatedScores});
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleDeleteScore = async (scoreId) => {
+    if (!window.confirm('Delete this score?')) return;
+    try {
+      await api.delete(`/admin/scores/${scoreId}`);
+      setEditingUserScores({...editingUserScores, scores: editingUserScores.scores.filter(s => s.id !== scoreId)});
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     }
@@ -105,12 +142,68 @@ export default function Admin() {
             <p className="text-gray-500 max-w-lg mx-auto mb-8">
               Running a draw will generate 5 random numbers (1-45), check all active subscriptions, calculate matches, record winnings, and instantly email results to all participants.
             </p>
-            <button 
-              onClick={handleRunDraw}
-              className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1"
-            >
-              START DRAW ENGINE
-            </button>
+            <div className="flex justify-center gap-4">
+              <button 
+                onClick={handleSimulate}
+                disabled={simulating}
+                className="px-8 py-4 bg-gray-100 text-gray-900 text-lg font-bold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {simulating ? 'SIMULATING...' : 'RUN SIMULATION'}
+              </button>
+              <button 
+                onClick={handleRunDraw}
+                className="px-8 py-4 bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-emerald-700 transition-colors hover:-translate-y-1"
+              >
+                START DRAW ENGINE
+              </button>
+            </div>
+
+            {simResults && (
+              <div className="mt-12 bg-gray-50 rounded-2xl p-8 border border-gray-200 text-left animate-in fade-in slide-in-from-top-4">
+                <div className="flex justify-between items-start mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Simulation Results (Dry Run)</h3>
+                  <div className="flex gap-2">
+                    {simResults.winning_numbers.map((n, i) => (
+                      <span key={i} className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">
+                        {n}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Pool</p>
+                    <p className="text-2xl font-black text-gray-900">£{simResults.total_pool.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Live Jackpot</p>
+                    <p className="text-2xl font-black text-emerald-600">£{Math.round(simResults.jackpot).toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Winners</p>
+                    <p className="text-2xl font-black text-gray-900">
+                      {Object.values(simResults.simulated_winners).reduce((a, b) => a + b, 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">5 Matches ({simResults.simulated_winners.match5} winners)</span>
+                    <span className="font-bold text-emerald-600">£{Math.round(simResults.prizes.match5_each).toLocaleString()} each</span>
+                  </div>
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">4 Matches ({simResults.simulated_winners.match4} winners)</span>
+                    <span className="font-bold">£{Math.round(simResults.prizes.match4_each).toLocaleString()} each</span>
+                  </div>
+                  <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
+                    <span className="text-gray-500">3 Matches ({simResults.simulated_winners.match3} winners)</span>
+                    <span className="font-bold">£{Math.round(simResults.prizes.match3_each).toLocaleString()} each</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -218,6 +311,7 @@ export default function Admin() {
                       <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Subscription</th>
                       <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Supporting</th>
                       <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Role</th>
+                      <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Score Mgmt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -231,13 +325,21 @@ export default function Admin() {
                         </td>
                         <td className="py-3 px-4">
                           <span className="text-xs text-gray-600">
-                            {u.user_charities?.[0]?.charities?.name || 'No selection'}
+                            {u.user_charities?.[0]?.charity?.name || 'No selection'}
                           </span>
                         </td>
                         <td className="py-3 px-4">
                           {u.is_admin 
                             ? <span className="text-red-600 text-xs font-bold px-2 py-1 bg-red-50 rounded-full border border-red-200">Admin</span>
                             : <span className="text-gray-500 text-sm">User</span>}
+                        </td>
+                        <td className="py-3 px-4">
+                          <button 
+                            onClick={() => setEditingUserScores({ email: u.email, scores: u.scores || [] })}
+                            className="text-blue-600 hover:underline text-xs font-bold"
+                          >
+                            Edit Scores
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -247,6 +349,58 @@ export default function Admin() {
           </div>
         )}
       </div>
+
+      {/* SCORE EDIT MODAL */}
+      {editingUserScores && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Manage Scores</h3>
+                <p className="text-xs text-gray-500">{editingUserScores.email}</p>
+              </div>
+              <button 
+                onClick={() => setEditingUserScores(null)}
+                className="text-gray-400 hover:text-gray-600 font-bold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {editingUserScores.scores.length === 0 ? (
+                <p className="text-center py-8 text-gray-400 italic">No scores logged for this user.</p>
+              ) : (
+                editingUserScores.scores.map(s => (
+                  <div key={s.id} className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <input 
+                      type="number" 
+                      defaultValue={s.score}
+                      onBlur={(e) => handleEditScore(s.id, parseInt(e.target.value), s.date)}
+                      className="w-16 px-2 py-2 rounded-lg border border-gray-200 text-center font-bold"
+                    />
+                    <input 
+                      type="date" 
+                      defaultValue={s.date}
+                      onBlur={(e) => handleEditScore(s.id, s.score, e.target.value)}
+                      className="flex-1 px-2 py-2 rounded-lg border border-gray-200 text-sm"
+                    />
+                    <button 
+                      onClick={() => handleDeleteScore(s.id)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+function Trash2(props) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
 }

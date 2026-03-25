@@ -33,9 +33,13 @@ router.post('/login-notification', async (req, res) => {
 
 // Update subscription status
 router.post('/subscribe', requireAuth, async (req, res) => {
+  const { plan_type } = req.body;
   const { data, error } = await supabase
     .from('profiles')
-    .update({ is_subscribed: true })
+    .update({ 
+      is_subscribed: true,
+      plan_type: plan_type || 'monthly'
+    })
     .eq('id', req.user.id)
     .select()
     .single();

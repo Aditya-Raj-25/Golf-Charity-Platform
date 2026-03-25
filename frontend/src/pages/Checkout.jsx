@@ -6,6 +6,7 @@ import { Lock, CreditCard, ShieldCheck, CheckCircle2 } from 'lucide-react';
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [plan, setPlan] = useState('monthly'); // 'monthly' or 'yearly'
   const navigate = useNavigate();
 
   const handlePayment = async (e) => {
@@ -15,7 +16,7 @@ export default function Checkout() {
     // Simulate payment delay
     setTimeout(async () => {
       try {
-        await api.post('/auth/subscribe');
+        await api.post('/auth/subscribe', { plan_type: plan });
         setSuccess(true);
         setTimeout(() => navigate('/dashboard'), 2000);
       } catch (err) {
@@ -42,7 +43,23 @@ export default function Checkout() {
       <div className="space-y-8">
         <div>
           <h1 className="text-4xl font-black text-gray-900 mb-2">Complete Subscription</h1>
-          <p className="text-gray-500 text-lg font-medium">Monthly Stewardship Plan — £25.00/mo</p>
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit mb-6">
+            <button 
+              onClick={() => setPlan('monthly')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${plan === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+            >
+              Monthly
+            </button>
+            <button 
+              onClick={() => setPlan('yearly')}
+              className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${plan === 'yearly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+            >
+              Yearly (Save £50)
+            </button>
+          </div>
+          <p className="text-gray-500 text-lg font-medium">
+            {plan === 'monthly' ? 'Monthly Stewardship Plan — £25.00/mo' : 'Yearly Stewardship Plan — £250.00/yr'}
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -105,13 +122,13 @@ export default function Checkout() {
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                PAY £25.00 NOW
+                PAY {plan === 'monthly' ? '£25.00' : '£250.00'} NOW
               </>
             )}
           </button>
 
           <p className="text-center text-[10px] text-gray-400 uppercase font-medium">
-            Your card will be charged monthly. Cancel anytime in settings.
+            {plan === 'monthly' ? 'Your card will be charged monthly. Cancel anytime in settings.' : 'Your card will be charged annually. Cancel anytime in settings.'}
           </p>
         </form>
       </div>
