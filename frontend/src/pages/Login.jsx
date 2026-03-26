@@ -27,9 +27,18 @@ export default function Login() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Trigger login notification (non-blocking for speed)
+        
+        // Fetch profile to check role
+        const { data: profile } = await supabase.from('profiles').select('is_admin').eq('email', email).single();
+        
+        // Trigger login notification (non-blocking)
         api.post('/auth/login-notification', { email }).catch(() => {});
-        navigate('/dashboard');
+        
+        if (profile?.is_admin) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       setError(error.message);
