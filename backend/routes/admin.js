@@ -4,51 +4,7 @@ const supabase = require('../lib/supabase');
 const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
 const { sendDrawResultEmail } = require('../lib/mailer');
 
-// HIDDEN: One-click setup for the user to test everything
-router.post('/test-setup', requireAuth, async (req, res) => {
-  try {
-    // 1. Make current user Admin
-    await supabase.from('profiles').update({ is_admin: true }).eq('id', req.user.id);
-    
-    // 2. Ensure a draw exists
-    let { data: draw } = await supabase.from('draws').select('id').order('run_at', { ascending: false }).limit(1).maybeSingle();
-    
-    if (!draw) {
-      console.log('No draw found, creating one...');
-      const { data: newDraw, error: dError } = await supabase.from('draws').insert({
-        num1: 7, num2: 14, num3: 21, num4: 28, num5: 35,
-        admin_id: req.user.id,
-        run_at: new Date().toISOString()
-      }).select('id').single();
-      
-      if (dError) throw dError;
-      draw = newDraw;
-    }
-
-    if (!draw) throw new Error('Could not create or find a draw');
-
-    // 3. Create a test winning for THIS user so they can test UPLOAD
-    const { error: wError } = await supabase.from('winnings').insert({
-      user_id: req.user.id,
-      draw_id: draw.id,
-      matches: 5,
-      matched_numbers: [7, 14, 21, 28, 35],
-      prize_amount: 1000,
-      is_approved: false
-    });
-
-    if (wError) {
-      // If error is duplicate, ignore it
-      if (!wError.message.includes('unique')) throw wError;
-    }
-
-    res.json({ success: true, message: "Success! You are now an ADMIN and have a TEST WINNING to claim!" });
-  } catch (err) {
-    console.error('Test Setup Error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
+// GET /api/admin/users
 router.get('/users', requireAdmin, async (req, res) => {
   const { data, error } = await supabase
     .from('profiles')

@@ -58,24 +58,6 @@ export default function Winnings() {
           <Trophy className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900">No Winnings Yet</h3>
           <p className="text-gray-500 mt-2 mb-8">Keep submitting scores and participating in our weekly draws to win!</p>
-          
-          <div className="pt-8 border-t border-gray-100">
-            <p className="text-xs text-gray-400 mb-4 uppercase font-bold tracking-widest">Developer Testing</p>
-            <button 
-              onClick={async () => {
-                try {
-                  const { data } = await api.post('/admin/test-setup');
-                  alert(data.message + ' Please refresh the page.');
-                  window.location.reload();
-                } catch (err) {
-                  alert(err.response?.data?.error || err.message);
-                }
-              }}
-              className="px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-black transition-all hover:scale-105"
-            >
-              GENERATE TEST WINNER & UNLOCK ADMIN
-            </button>
-          </div>
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
