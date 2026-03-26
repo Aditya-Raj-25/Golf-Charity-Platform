@@ -27,8 +27,8 @@ export default function Login() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Trigger login notification
-        await api.post('/auth/login-notification', { email });
+        // Trigger login notification (non-blocking for speed)
+        api.post('/auth/login-notification', { email }).catch(() => {});
         navigate('/dashboard');
       }
     } catch (error) {
