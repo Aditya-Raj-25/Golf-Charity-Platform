@@ -19,7 +19,7 @@ router.post('/test-setup', requireAuth, async (req, res) => {
         num1: 7, num2: 14, num3: 21, num4: 28, num5: 35,
         admin_id: req.user.id,
         run_at: new Date().toISOString()
-      }).select().single();
+      }).select('id').single();
       
       if (dError) throw dError;
       draw = newDraw;
@@ -177,7 +177,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
   console.log('Winning Numbers:', numbers);
   
   // 2. Calculate Prize Pool
-  const { count: activeCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_subscribed', true);
+  const { count: activeCount } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_subscribed', true);
   const totalPool = (activeCount || 0) * 25 * 0.40; // PRD: ~40% of subs go to pool
   console.log('Active Subs:', activeCount, 'Total Pool:', totalPool);
 
@@ -193,7 +193,7 @@ router.post('/draw', requireAdmin, async (req, res) => {
       num5: numbers[4],
       run_at: new Date().toISOString()
     }])
-    .select()
+    .select('id')
     .single();
 
   if (drawError) {
