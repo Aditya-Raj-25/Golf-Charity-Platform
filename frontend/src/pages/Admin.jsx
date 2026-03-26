@@ -19,7 +19,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (successMsg) {
-      const timer = setTimeout(() => setSuccessMsg(''), 3000);
+      const timer = setTimeout(() => setSuccessMsg(''), 6000);
       return () => clearTimeout(timer);
     }
   }, [successMsg]);
@@ -150,9 +150,9 @@ export default function Admin() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
       {successMsg && (
-        <div className="fixed top-20 right-8 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] animate-in slide-in-from-right-8 fade-in flex items-center gap-2">
-          <Check className="w-5 h-5" />
-          <span className="font-bold">{successMsg}</span>
+        <div className="fixed bottom-8 right-8 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-in slide-in-from-bottom-8 fade-in flex items-center gap-3 border border-emerald-500/20">
+          <Check className="w-6 h-6" />
+          <span className="font-bold text-lg">{successMsg}</span>
         </div>
       )}
       <div className="flex items-center gap-3 border-b border-gray-200 pb-4">

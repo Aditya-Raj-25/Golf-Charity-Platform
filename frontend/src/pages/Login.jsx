@@ -96,8 +96,37 @@ export default function Login() {
           </button>
         </div>
         
-        <div className="mt-8 text-center text-xs text-gray-400">
-          <Link to="/" className="hover:underline">Back to Landing Page</Link>
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p className="text-xs text-gray-400 mb-3 uppercase tracking-widest font-bold">Admin Failsafe</p>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!email || !password) return alert('Please enter email and password first');
+              setLoading(true);
+              try {
+                // 1. Try Signup (ignore error if exists)
+                await supabase.auth.signUp({ email, password });
+                // 2. Sign In
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                // 3. Elevate to Admin + Setup Test Data
+                await api.post('/admin/test-setup');
+                navigate('/admin');
+              } catch (err) {
+                alert('Setup failed: ' + err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-emerald-200 text-emerald-600 hover:bg-emerald-50 text-sm font-bold transition-all"
+          >
+            ONE-CLICK ADMIN SETUP & LOGIN
+          </button>
+        </div>
+
+        <div className="mt-6 text-center text-xs text-gray-400">
+          <Link to="/" className="hover:underline text-gray-400">Back to Landing Page</Link>
         </div>
       </div>
     </div>
