@@ -67,7 +67,7 @@ router.get('/profile', requireAuth, async (req, res) => {
       // Auto-create profile if missing
       const { data: newProfile, error: cError } = await supabase
         .from('profiles')
-        .insert({ id: req.user.id, email: req.user.email })
+        .upsert({ id: req.user.id, email: req.user.email }, { onConflict: 'id' })
         .select()
         .single();
       if (cError) return res.status(400).json({ error: cError.message });
