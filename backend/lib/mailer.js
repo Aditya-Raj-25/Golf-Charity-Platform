@@ -15,7 +15,7 @@ const sendWelcomeEmail = async (toEmail) => {
   sgMail.setApiKey(apiKey);
   const msg = {
     to: toEmail,
-    from: getFromEmail(),
+    from: { name: 'Golf Charity Platform', email: getFromEmail() },
     subject: 'Welcome to Golf Charity Platform!',
     text: 'Thank you for joining our platform. Subscribe today to participate in our weekly draws and support your favorite charities!'
   };
@@ -41,7 +41,7 @@ const sendLoginEmail = async (toEmail) => {
   sgMail.setApiKey(apiKey);
   const msg = {
     to: toEmail,
-    from: getFromEmail(),
+    from: { name: 'Golf Charity Platform', email: getFromEmail() },
     subject: 'New Login to your Golf Charity Portal',
     text: `Hello, this is a notification that a login was recently performed on your account at ${new Date().toLocaleString()}. If this wasn't you, please secure your account.`
   };
@@ -66,7 +66,7 @@ const sendDrawResultEmail = async (toEmail, matches, amount) => {
   sgMail.setApiKey(apiKey);
   const msg = {
     to: toEmail,
-    from: getFromEmail(),
+    from: { name: 'Golf Charity Platform', email: getFromEmail() },
     subject: 'Golf Charity Platform - Draw Results!',
     text: matches >= 3 
       ? `Congratulations! You matched ${matches} numbers and won $${amount}! Log in to your dashboard to claim your prize.`
