@@ -19,6 +19,7 @@ app.use(cors({
 
 app.use(express.json());
 
+app.get('/', (req, res) => res.send('Golf Charity API is running. Visit http://localhost:5173 for the frontend.'));
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use('/api/auth', authRoutes);
