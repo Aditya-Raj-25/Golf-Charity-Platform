@@ -8,7 +8,8 @@ const drawsRoutes = require('./routes/draws');
 const charitiesRoutes = require('./routes/charities');
 const adminRoutes = require('./routes/admin');
 const winningsRoutes = require('./routes/winnings');
-const stripeRoutes = require('./routes/stripe');
+const paymentRoutes = require('./routes/payments');
+const { requireAuth, requirePremium } = require('./middleware/authMiddleware');
 
 
 const app = express();
@@ -30,7 +31,17 @@ app.use('/api/draws', drawsRoutes);
 app.use('/api/charities', charitiesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/winnings', winningsRoutes);
-app.use('/api/stripe', stripeRoutes);
+app.use('/api/payments', paymentRoutes);
+
+// Protected Premium Content Example
+app.get('/api/premium-content', requireAuth, requirePremium, (req, res) => {
+  res.json({ 
+    message: 'Welcome to the Premium Lounge!', 
+    secret_club: 'The Golden Tee',
+    perks: ['Higher prize tiers', 'Early draw notifications', 'Private tournaments']
+  });
+});
+
 
 
 // Listen for Render/Local (exclude Vercel)

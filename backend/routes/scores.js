@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth, requirePremium } = require('../middleware/authMiddleware');
 
 router.get('/', requireAuth, async (req, res) => {
   const { data, error } = await supabase
@@ -14,7 +14,7 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(data || []);
 });
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requirePremium, async (req, res) => {
   const { score, date } = req.body;
   if (!score || score < 1 || score > 45 || !date) {
     return res.status(400).json({ error: 'Invalid score or date' });
@@ -58,7 +58,8 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // Update score
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requirePremium, async (req, res) => {
+
   const { id } = req.params;
   const { score } = req.body;
 

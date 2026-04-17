@@ -51,4 +51,20 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = { requireAuth, requireAdmin };
+const requirePremium = async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ error: 'Auth required' });
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', req.user.id)
+    .single();
+
+  if (profile?.subscription_status === 'active') {
+    return next();
+  }
+  
+  res.status(403).json({ error: 'Premium access required. Please subscribe.' });
+};
+
+module.exports = { requireAuth, requireAdmin, requirePremium };
