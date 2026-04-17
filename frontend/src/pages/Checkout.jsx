@@ -16,23 +16,12 @@ export default function Checkout() {
     try {
       const { data } = await api.post('/payments/create-checkout-session', { plan_type: plan });
       
-      // Start polling for active status (simulating waiting for webhook)
-      const checkStatus = setInterval(async () => {
-        try {
-          const { data: profile } = await api.get('/auth/profile');
-          if (profile.subscription_status === 'active') {
-            clearInterval(checkStatus);
-            setSuccess(true);
-            setLoading(false);
-            setTimeout(() => navigate('/dashboard'), 3000);
-          }
-        } catch (err) {
-          console.error('Status check error:', err);
-        }
-      }, 2000);
-
-      // Timeout if webhook fails (for cleanup)
-      setTimeout(() => clearInterval(checkStatus), 30000);
+      if (data.checkout_url) {
+        // Redirect to Dodo Payments Checkout
+        window.location.href = data.checkout_url;
+      } else {
+        throw new Error('No checkout URL received from server');
+      }
 
     } catch (err) {
       console.error('Checkout Error:', err);
@@ -49,7 +38,7 @@ export default function Checkout() {
           <CheckCircle2 className="w-12 h-12" />
         </div>
         <h1 className="text-3xl font-bold text-gray-900">Payment Secured!</h1>
-        <p className="text-gray-500">Your subscription is now active. This was a mock transaction. Redirecting to your dashboard...</p>
+        <p className="text-gray-500">Your subscription is now active. Redirecting to your dashboard...</p>
       </div>
     );
   }
@@ -58,7 +47,9 @@ export default function Checkout() {
     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 py-10">
       <div className="space-y-8">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Subscription</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Select Your Plan</h1>
+          <p className="text-gray-500 text-lg mb-6">Choose the plan that fits your stewardship goals.</p>
+          
           <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit mb-6">
             <button 
               onClick={() => setPlan('monthly')}
@@ -73,8 +64,8 @@ export default function Checkout() {
               Yearly (Save £50)
             </button>
           </div>
-          <p className="text-gray-500 text-lg">
-            {plan === 'monthly' ? 'Monthly Stewardship Plan — £25.00/mo' : 'Yearly Stewardship Plan — £250.00/yr'}
+          <p className="text-gray-600 font-medium">
+            {plan === 'monthly' ? 'Monthly Stewardship — £25.00/mo' : 'Yearly Stewardship — £250.00/yr'}
           </p>
         </div>
 
@@ -88,14 +79,14 @@ export default function Checkout() {
           <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
             <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
             <p className="text-sm text-blue-800 font-medium">
-              Safe & Secure Mock Payments. We use an event-driven architecture to simulate real Stripe webhooks.
+              Secure Checkout via Dodo Payments.
             </p>
           </div>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 space-y-6 flex flex-col justify-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Plan</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Checkout</h2>
         
         <div className="grid gap-4">
           <div 
@@ -103,10 +94,10 @@ export default function Checkout() {
             className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${plan === 'monthly' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
           >
             <div className="flex justify-between items-center mb-2">
-              <span className="font-bold text-gray-900">Monthly</span>
+              <span className="font-bold text-gray-900">Monthly Plan</span>
               <span className="text-2xl font-bold text-gray-900">£25</span>
             </div>
-            <p className="text-sm text-gray-500">Perfect for starters</p>
+            <p className="text-sm text-gray-500">Full access to weekly draws.</p>
           </div>
 
           <div 
@@ -117,13 +108,13 @@ export default function Checkout() {
               Best Value
             </div>
             <div className="flex justify-between items-center mb-2">
-              <span className="font-bold text-gray-900">Yearly</span>
+              <span className="font-bold text-gray-900">Yearly Plan</span>
               <div className="text-right">
                 <span className="text-2xl font-bold text-gray-900">£250</span>
                 <p className="text-[10px] text-emerald-600 font-bold">SAVE £50/YR</p>
               </div>
             </div>
-            <p className="text-sm text-gray-500">Commit to the cause</p>
+            <p className="text-sm text-gray-500">Year-long impact and entries.</p>
           </div>
         </div>
 
@@ -135,18 +126,18 @@ export default function Checkout() {
           {loading ? (
             <>
               <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              PROCESSING SECURELY...
+              REDIRECTING TO DODO...
             </>
           ) : (
             <>
               <Lock className="w-4 h-4" />
-              SUBSCRIBE {plan === 'monthly' ? '£25/MO' : '£250/YR'}
+              GO TO PAYMENT
             </>
           )}
         </button>
 
         <p className="text-center text-[10px] text-gray-400 uppercase font-medium">
-          Powered by Mock Stripe Webhook Architecture.
+          Secured by Dodo Payments.
         </p>
       </div>
 

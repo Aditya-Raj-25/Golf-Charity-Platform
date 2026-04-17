@@ -13,6 +13,14 @@ const { requireAuth, requirePremium } = require('./middleware/authMiddleware');
 
 
 const app = express();
+// Use JSON for all routes EXCEPT the webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 app.use(cors({
   origin: '*', // For MVP, allow all
@@ -20,7 +28,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+// Webhook route MUST be before express.json() if you need verification
+// Note: paymentRoutes includes the /webhook route
+app.use('/api/payments', paymentRoutes);
+
 
 app.get('/', (req, res) => res.send('Golf Charity API is running. Visit http://localhost:5173 for the frontend.'));
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
@@ -31,12 +42,12 @@ app.use('/api/draws', drawsRoutes);
 app.use('/api/charities', charitiesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/winnings', winningsRoutes);
-app.use('/api/payments', paymentRoutes);
+// app.use('/api/payments', paymentRoutes); // MOVED UP FOR WEBHOOKS
 
 // Protected Premium Content Example
 app.get('/api/premium-content', requireAuth, requirePremium, (req, res) => {
-  res.json({ 
-    message: 'Welcome to the Premium Lounge!', 
+  res.json({
+    message: 'Welcome to the Premium Lounge!',
     secret_club: 'The Golden Tee',
     perks: ['Higher prize tiers', 'Early draw notifications', 'Private tournaments']
   });
@@ -45,12 +56,16 @@ app.get('/api/premium-content', requireAuth, requirePremium, (req, res) => {
 
 
 // Listen for Render/Local (exclude Vercel)
-if (!process.env.VERCEL) {
-  const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
+// if (!process.env.VERCEL) {
+//   const PORT = process.env.PORT || 3001;
+//   app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+//   });
+// }
+
+app.listen(3001, () => {
+  console.log('Server running on port 3001');
+})
 
 // Export for Vercel Serverless
 module.exports = app;

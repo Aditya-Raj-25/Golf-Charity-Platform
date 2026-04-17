@@ -2,104 +2,153 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/authMiddleware');
-const axios = require('axios'); // For internal webhook loopback
+const { DodoPayments } = require('dodopayments');
 
-// 1. Initiate Checkout (Simulation)
+console.log("KEY:", process.env.DODO_API_KEY);
+// ✅ Use ONE correct env variable
+const apiKey = (process.env.DODO_API_KEY || '').trim();
+
+if (!apiKey) {
+  console.error("❌ DODO_API_KEY is missing in .env");
+}
+
+const dodo = new DodoPayments({
+  bearerToken: apiKey,
+  environment: 'test_mode'
+  // ❗ optional: only if required by SDK
+});
+
+// ✅ Keep config at top
+const PRODUCT_IDS = {
+  monthly: 'pdt_0NcvO0h7ZWl4Q50CEtnhz',
+  yearly: 'pdt_0NcvO3KQPNmVkAr7havD9'
+};
+
+
+
+// ============================
+// 🚀 CREATE CHECKOUT SESSION
+// ============================
 router.post('/create-checkout-session', requireAuth, async (req, res) => {
-  const { plan_type } = req.body; // 'monthly' or 'yearly'
-  const user_id = req.user.id;
-  const session_id = `sess_${Math.random().toString(36).substr(2, 9)}`;
+  const { plan_type } = req.body;
+  const productId = PRODUCT_IDS[plan_type];
+
+  if (!productId) {
+    return res.status(400).json({ error: 'Invalid plan type' });
+  }
 
   try {
-    // Save session
-    await supabase.from('payment_sessions').insert([{
-      session_id,
-      user_id,
-      plan_type,
-      status: 'pending'
-    }]);
-
-    // Set user to pending
-    await supabase.from('profiles').update({ subscription_status: 'pending' }).eq('id', user_id);
-
-    // CRITICAL: Simulate Stripe Webhook Delay
-    // In production, Stripe calls your webhook after payment success.
-    // We simulate this by calling our own /webhook endpoint after 3 seconds.
-    setTimeout(async () => {
-      try {
-        const port = process.env.PORT || 5000;
-        await axios.post(`http://localhost:${port}/api/payments/webhook`, {
-          type: 'checkout.session.completed',
-          data: { session_id, user_id, plan_type }
-        });
-        console.log(`[MOCK STRIPE] Webhook fired for session: ${session_id}`);
-      } catch (err) {
-        console.error('[MOCK STRIPE] Webhook simulation failed:', err.message);
+    const session = await dodo.checkoutSessions.create({
+      product_cart: [
+        {
+          product_id: productId,
+          quantity: 1,
+        },
+      ],
+      customer: {
+        email: req.user.email,
+        name: req.user.user_metadata?.full_name || "User",
+      },
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`,
+      metadata: {
+        user_id: req.user.id,
+        plan_type: String(plan_type),
       }
-    }, 3000);
+    });
 
-    res.json({ session_id, status: 'pending', url: `/checkout/processing?session_id=${session_id}` });
+    console.log("✅ DODO SESSION CREATED:", session);
+
+    return res.status(200).json({
+      checkout_url: session.checkout_url,
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("🔥 DODO FULL ERROR:", JSON.stringify(err, null, 2));
+
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 });
 
-// 2. Webhook Handler (Event-Driven)
-router.post('/webhook', async (req, res) => {
-  const { type, data } = req.body;
-  console.log(`[STRIPE WEBHOOK] Received event: ${type}`);
 
+
+// ============================
+// 🔔 WEBHOOK HANDLER
+// ============================
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
-    if (type === 'checkout.session.completed') {
-      const { session_id, user_id, plan_type } = data;
+    const payload = req.body;
+
+    console.log('[DODO WEBHOOK] Event:', payload.type);
+
+    const eventType = payload.type;
+
+    if (
+      eventType === 'payment.succeeded' ||
+      eventType === 'checkout.session.completed' ||
+      eventType === 'subscription.active'
+    ) {
+      const data = payload.data;
+
+      const user_id = data?.metadata?.user_id;
+      const plan_type = data?.metadata?.plan_type;
+
+      if (!user_id || !plan_type) {
+        console.warn('⚠️ Missing metadata in webhook');
+        return res.json({ received: true });
+      }
 
       const startDate = new Date();
       const endDate = new Date();
-      if (plan_type === 'monthly') endDate.setDate(startDate.getDate() + 30);
-      else endDate.setDate(startDate.getDate() + 365);
 
-      // Update Session
-      await supabase.from('payment_sessions').update({ status: 'completed' }).eq('session_id', session_id);
+      if (plan_type === 'yearly') {
+        endDate.setFullYear(startDate.getFullYear() + 1);
+      } else {
+        endDate.setMonth(startDate.getMonth() + 1);
+      }
 
-      // ACTIVATE SUBSCRIPTION
       await supabase.from('profiles').update({
         subscription_status: 'active',
         plan_type: plan_type,
         subscription_start_date: startDate.toISOString(),
         subscription_end_date: endDate.toISOString(),
-        is_subscribed: true // Backward compatibility
+        is_subscribed: true
       }).eq('id', user_id);
-    }
 
-    if (type === 'customer.subscription.deleted') {
-      const { user_id } = data;
-      await supabase.from('profiles').update({ 
-        subscription_status: 'cancelled',
-        is_subscribed: false 
-      }).eq('id', user_id);
+      await supabase.from('payment_sessions').update({
+        status: 'completed'
+      }).eq('session_id', data.checkout_session_id || data.session_id);
+
+      console.log(`✅ Subscription activated for ${user_id}`);
     }
 
     res.json({ received: true });
+
   } catch (err) {
-    console.error('[WEBHOOK ERROR]', err.message);
-    res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error('🔥 WEBHOOK ERROR:', err);
+    res.status(500).send('Webhook error');
   }
 });
 
-// 3. Manual Cancellation
+
+
+// ============================
+// ❌ CANCEL SUBSCRIPTION
+// ============================
 router.post('/cancel-subscription', requireAuth, async (req, res) => {
   try {
-    // In real Stripe, you'd call stripe.subscriptions.del()
-    // Here we simulate the event loopback
-    const port = process.env.PORT || 5000;
-    await axios.post(`http://localhost:${port}/api/payments/webhook`, {
-      type: 'customer.subscription.deleted',
-      data: { user_id: req.user.id }
-    });
-    res.json({ message: 'Subscription cancelled via event flow' });
+    await supabase.from('profiles').update({
+      subscription_status: 'cancelled',
+      is_subscribed: false
+    }).eq('id', req.user.id);
+
+    res.json({ message: 'Subscription cancelled' });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 module.exports = router;

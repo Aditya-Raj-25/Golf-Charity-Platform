@@ -87,83 +87,45 @@ export default function Dashboard() {
         
       </div>
 
-      {!profile.subscription_status || profile.subscription_status === 'free' ? (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 flex items-start gap-4">
-          <AlertCircle className="text-yellow-500 w-8 h-8 shrink-0 mt-1" />
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-yellow-800">Action Required: Subscribe to Play</h3>
-            <p className="text-yellow-700 mt-1 text-sm mb-4">You need an active subscription to be eligible for weekly draws and prizes.</p>
-            <button 
-              onClick={() => navigate('/checkout')}
-              className="px-5 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg transition-colors"
-            >
-              Subscribe Now (£25/mo)
-            </button>
-          </div>
-        </div>
-      ) : profile.subscription_status === 'pending' ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 flex items-center gap-4">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-          <div>
-            <h3 className="text-lg font-bold text-blue-800">Processing Payment</h3>
-            <p className="text-blue-700 text-sm">Activating your subscription... This takes about 3 seconds.</p>
-          </div>
-        </div>
-      ) : profile.subscription_status === 'active' ? (
-         <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-emerald-600 rounded-2xl p-6 text-white shadow-lg overflow-hidden relative">
-              <div className="relative z-10">
-                <h3 className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-2">My Community Impact</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">
-                     {profile.user_charities?.[0] 
-                        ? (profile.user_charities[0].contribution_pct <= 20 ? '4' : profile.user_charities[0].contribution_pct <= 50 ? '12' : '25')
-                        : '1.2k'}
-                  </span>
-                  <span className="text-emerald-200 text-sm font-medium">
-                    {profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('green') ? 'Mangroves' : profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('kids') ? 'Meals' : 'Hours'} Planted
-                  </span>
-                </div>
-                <div className="mt-4">
-                  <p className="text-emerald-100 text-sm font-medium font-bold">
-                    Supporting: {profile.user_charities?.[0]?.charity?.name || 'GREEN KEEPERS FUND'}
-                  </p>
-                </div>
-              </div>
-              <Heart className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-500/20" />
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="bg-emerald-600 rounded-2xl p-6 text-white shadow-lg overflow-hidden relative">
+          <div className="relative z-10">
+            <h3 className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-2">My Community Impact</h3>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black">
+                 {profile.user_charities?.[0] 
+                    ? (profile.user_charities[0].contribution_pct <= 20 ? '4' : profile.user_charities[0].contribution_pct <= 50 ? '12' : '25')
+                    : '1.2k'}
+              </span>
+              <span className="text-emerald-200 text-sm font-medium">
+                {profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('green') ? 'Mangroves' : profile.user_charities?.[0]?.charity?.name?.toLowerCase().includes('kids') ? 'Meals' : 'Hours'} Planted
+              </span>
             </div>
+            <div className="mt-4">
+              <p className="text-emerald-100 text-sm font-medium font-bold">
+                Supporting: {profile.user_charities?.[0]?.charity?.name || 'GREEN KEEPERS FUND'}
+              </p>
+            </div>
+          </div>
+          <Heart className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-500/20" />
+        </div>
 
-            <div className="bg-gray-900 rounded-2xl p-6 text-white shadow-lg flex flex-col justify-between">
-              <div>
-                <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Live Weekly Jackpot</h3>
-                <div className="flex items-baseline gap-2 mt-4">
-                  <span className="text-gray-500 text-2xl font-bold">£</span>
-                  <span className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums">
-                    {stats?.total_prize_pool ? stats.total_prize_pool.toLocaleString() : '5,000'}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-between items-center text-xs font-bold text-gray-500">
-                <span>ACTIVE ENTRANTS: <strong className="text-white ml-1">{stats?.active_players || 0}</strong></span>
-                <span className="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full">JACKPOT GROWING</span>
-              </div>
+        <div className="bg-gray-900 rounded-2xl p-6 text-white shadow-lg flex flex-col justify-between">
+          <div>
+            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Live Weekly Jackpot</h3>
+            <div className="flex items-baseline gap-2 mt-4">
+              <span className="text-gray-500 text-2xl font-bold">£</span>
+              <span className="text-5xl font-black text-emerald-400 tracking-tighter tabular-nums">
+                {stats?.total_prize_pool ? stats.total_prize_pool.toLocaleString() : '5,000'}
+              </span>
             </div>
-         </div>
-      ) : (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-4">
-            <AlertCircle className="text-red-500 w-8 h-8 shrink-0 mt-1" />
-            <div className="flex-1">
-                <h3 className="text-lg font-bold text-red-800">Subscription {profile.subscription_status}</h3>
-                <p className="text-red-700 mt-1 text-sm mb-4">Your access has expired. Please renew to stay in the draw.</p>
-                <button 
-                onClick={() => navigate('/checkout')}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
-                >
-                Renew Subscription
-                </button>
-            </div>
+          </div>
+          <div className="mt-6 flex justify-between items-center text-xs font-bold text-gray-500">
+            <span>ACTIVE ENTRANTS: <strong className="text-white ml-1">{stats?.active_players || 0}</strong></span>
+            <span className="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full">JACKPOT GROWING</span>
+          </div>
         </div>
-      )}
+      </div>
 
 
 

@@ -1,3 +1,4 @@
+console.log("⚠️ resetDatabase file is being executed");
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: './backend/.env' });
 
@@ -6,7 +7,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing Supabase environment variables in backend/.env');
-  process.exit(1);
+  // process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -22,7 +23,7 @@ async function resetDatabase() {
   try {
     // Delete in order of constraints
     console.log('🗑️ Clearing data from tables...');
-    
+
     const tables = ['winnings', 'user_charities', 'scores', 'draws', 'profiles'];
     for (const table of tables) {
       const { error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
@@ -50,7 +51,7 @@ async function resetDatabase() {
     // Create New Admin
     const adminEmail = 'admin123@gmail.com';
     const adminPass = '123456';
-    
+
     console.log(`👤 Creating new admin: ${adminEmail}...`);
     const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email: adminEmail,

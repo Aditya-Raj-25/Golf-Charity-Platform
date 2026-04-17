@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { LogOut, Home, User, Trophy, Heart, Shield } from 'lucide-react';
+import { LogOut, Home, User, Trophy, Heart, Shield, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
 
@@ -34,8 +34,9 @@ export default function Layout() {
                 Golf Charity
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <Link to="/dashboard" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><Home className="inline w-4 h-4 mr-1"/>Dashboard</Link>
+              <Link to="/checkout" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><CreditCard className="inline w-4 h-4 mr-1"/>Pricing</Link>
               <Link to="/scores" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><User className="inline w-4 h-4 mr-1"/>Scores</Link>
               <Link to="/charity" className="text-gray-600 hover:text-emerald-600 px-3 py-2 rounded-md font-medium"><Heart className="inline w-4 h-4 mr-1"/>Charity</Link>
               {isAdmin && (
