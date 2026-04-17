@@ -24,21 +24,33 @@ export default function Winnings() {
     }
   };
 
-  const handleUploadProof = async (e, id) => {
-    e.preventDefault();
-    if (!proofUrl) return;
+  const handleUploadProof = async (file, id) => {
+    if (!file) return;
     setUploadingId(id);
     
+    const formData = new FormData();
+    formData.append('proof', file);
+
     try {
-      await api.post(`/winnings/${id}/proof`, { proof_url: proofUrl });
+      await api.post(`/winnings/${id}/proof`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       alert('Proof uploaded successfully! Awaiting admin approval.');
-      setProofUrl('');
       await fetchWinnings();
     } catch (err) {
       alert('Failed to upload proof. ' + (err.response?.data?.error || err.message));
     } finally {
       setUploadingId(null);
     }
+  };
+
+  const getStatusDisplay = (win) => {
+    if (win.payment_status === 'paid') return <span className="text-emerald-600 font-bold uppercase tracking-widest text-[10px] bg-emerald-50 px-2 py-1 rounded border border-emerald-100 italic">Paid</span>;
+    if (win.is_approved && win.payment_status === 'pending') return <span className="text-blue-600 font-bold uppercase tracking-widest text-[10px] bg-blue-50 px-2 py-1 rounded border border-blue-100 italic">Approved — Payment Pending</span>;
+    if (win.proof_url) return <span className="text-yellow-600 font-bold uppercase tracking-widest text-[10px] bg-yellow-50 px-2 py-1 rounded border border-yellow-100 italic">Under Review</span>;
+    return <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px] bg-gray-50 px-2 py-1 rounded border border-gray-100 italic">Pending Proof</span>;
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading winnings...</div>;
@@ -80,15 +92,9 @@ export default function Winnings() {
                       {win.matches} / 5
                     </span>
                   </td>
-                  <td className="py-4 px-6 font-bold text-green-600 text-lg">${win.prize_amount}</td>
+                  <td className="py-4 px-6 font-bold text-green-600 text-lg">£{win.prize_amount}</td>
                   <td className="py-4 px-6">
-                    {win.is_approved ? (
-                      <span className="text-green-600 font-medium">Approved & Paid</span>
-                    ) : win.proof_url ? (
-                      <span className="text-yellow-600 font-medium">Under Review</span>
-                    ) : (
-                      <span className="text-gray-500 font-medium">Pending Proof</span>
-                    )}
+                    {getStatusDisplay(win)}
                   </td>
                   <td className="py-4 px-6">
                     {!win.is_approved && !win.proof_url && (
@@ -99,28 +105,22 @@ export default function Winnings() {
                           onChange={async (e) => {
                             const file = e.target.files[0];
                             if (!file) return;
-                            
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setProofUrl(reader.result);
-                              setUploadingId(win.id);
-                            };
-                            reader.readAsDataURL(file);
+                            handleUploadProof(file, win.id);
                           }}
                           className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                         />
-                        <button
-                          disabled={!proofUrl || uploadingId !== win.id}
-                          onClick={(e) => handleUploadProof(e, win.id)}
-                          className={`px-3 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-1 ${(!proofUrl || uploadingId !== win.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          <UploadCloud className="w-4 h-4" /> 
-                          {uploadingId === win.id ? 'Attaching...' : 'Claim Prize'}
-                        </button>
+                        {uploadingId === win.id && (
+                          <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold">
+                             <div className="w-3 h-3 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+                             UPLOADING...
+                          </div>
+                        )}
                       </div>
                     )}
-                    {win.proof_url && !win.is_approved && (
-                       <a href={win.proof_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm font-medium">View Proof</a>
+                    {win.proof_url && (
+                       <a href={win.proof_url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-700 text-xs font-black uppercase tracking-widest underline decoration-2 underline-offset-4">
+                         View Uploaded Proof
+                       </a>
                     )}
                   </td>
                 </tr>
@@ -129,6 +129,7 @@ export default function Winnings() {
           </table>
         </div>
       )}
+
     </div>
   );
 }
