@@ -13,18 +13,20 @@ export default function Checkout() {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate payment delay
-    setTimeout(async () => {
-      try {
-        await api.post('/auth/subscribe', { plan_type: plan });
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 2000);
-      } catch (err) {
-        alert('Payment failed: ' + (err.response?.data?.error || err.message));
-        setLoading(false);
+    try {
+      const response = await api.post('/stripe/create-checkout-session', { plan });
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No session URL returned');
       }
-    }, 1500);
+    } catch (err) {
+      console.error('Stripe Redirect Error:', err);
+      alert('Failed to start checkout: ' + (err.response?.data?.error || err.message));
+      setLoading(false);
+    }
   };
+
 
   if (success) {
     return (
@@ -78,60 +80,62 @@ export default function Checkout() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-6">
-        <div className="flex items-center justify-between border-b pb-4">
-          <span className="font-bold text-gray-900">Payment Details</span>
-          <div className="flex gap-2">
-             <div className="w-8 h-5 bg-gray-100 rounded" />
-             <div className="w-8 h-5 bg-gray-100 rounded" />
-             <div className="w-8 h-5 bg-gray-100 rounded" />
+      <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-6 flex flex-col justify-center">
+        <h2 className="text-2xl font-black text-gray-900 mb-4">Choose Your Plan</h2>
+        
+        <div className="grid gap-4">
+          <div 
+            onClick={() => setPlan('monthly')}
+            className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${plan === 'monthly' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-black text-gray-900">Monthly</span>
+              <span className="text-2xl font-black text-gray-900">£25</span>
+            </div>
+            <p className="text-sm text-gray-500 font-medium">Perfect for starters</p>
+          </div>
+
+          <div 
+            onClick={() => setPlan('yearly')}
+            className={`p-6 rounded-3xl border-2 cursor-pointer transition-all relative overflow-hidden ${plan === 'yearly' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
+          >
+            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-widest">
+              Best Value
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-black text-gray-900">Yearly</span>
+              <div className="text-right">
+                <span className="text-2xl font-black text-gray-900">£250</span>
+                <p className="text-[10px] text-emerald-600 font-bold">SAVE £50/YR</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500 font-medium">Commit to the cause</p>
           </div>
         </div>
 
-        <form onSubmit={handlePayment} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Card Information</label>
-            <div className="relative">
-              <input 
-                required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
-                placeholder="4242 4242 4242 4242"
-              />
-              <CreditCard className="absolute right-4 top-3.5 w-5 h-5 text-gray-300" />
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <input required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="MM / YY" />
-              <input required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="CVC" />
-            </div>
-          </div>
+        <button 
+          onClick={handlePayment}
+          disabled={loading}
+          className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+        >
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              REDIRECTING TO STRIPE...
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4" />
+              SUBSCRIBE {plan === 'monthly' ? '£25/MO' : '£250/YR'}
+            </>
+          )}
+        </button>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cardholder Name</label>
-            <input required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="John Doe" />
-          </div>
-
-          <button 
-            disabled={loading}
-            className="w-full py-4 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                PROCESSING...
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                PAY {plan === 'monthly' ? '£25.00' : '£250.00'} NOW
-              </>
-            )}
-          </button>
-
-          <p className="text-center text-[10px] text-gray-400 uppercase font-medium">
-            {plan === 'monthly' ? 'Your card will be charged monthly. Cancel anytime in settings.' : 'Your card will be charged annually. Cancel anytime in settings.'}
-          </p>
-        </form>
+        <p className="text-center text-[10px] text-gray-400 uppercase font-medium">
+          Secure payment powered by Stripe.
+        </p>
       </div>
+
     </div>
   );
 }
