@@ -4,10 +4,11 @@ const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/authMiddleware');
 const DodoPayments = require('dodopayments').DodoPayments || require('dodopayments').default || require('dodopayments');
 
+// API KEY Configuration
 const apiKey = (process.env.DODO_API_KEY || '').trim();
 const dodo = new DodoPayments({
   bearerToken: apiKey,
-  environment: 'test_mode'
+  environment: 'test_mode', // Ensure this matches your key type
 });
 
 const PRODUCT_IDS = {
@@ -21,8 +22,9 @@ const PRODUCT_IDS = {
 router.post('/create-checkout-session', requireAuth, async (req, res) => {
   try {
     const { plan_type } = req.body;
-    const productId = PRODUCT_IDS[plan_type];
+    console.log("📥 CHECKOUT REQUEST:", plan_type);
 
+    const productId = PRODUCT_IDS[plan_type];
     if (!productId) {
       return res.status(400).json({ error: 'Invalid plan type' });
     }
@@ -41,10 +43,7 @@ router.post('/create-checkout-session', requireAuth, async (req, res) => {
     });
 
     console.log("✅ DODO SESSION CREATED:", session.session_id);
-
-    return res.status(200).json({
-      checkout_url: session.checkout_url,
-    });
+    return res.status(200).json({ checkout_url: session.checkout_url });
 
   } catch (err) {
     console.error("🔥 DODO ERROR:", err.message);
@@ -58,7 +57,7 @@ router.post('/create-checkout-session', requireAuth, async (req, res) => {
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const payload = JSON.parse(req.body.toString());
-    console.log('[DODO WEBHOOK] Event:', payload.type);
+    console.log('[DODO WEBHOOK] Received:', payload.type);
 
     if (['payment.succeeded', 'checkout.session.completed', 'subscription.active'].includes(payload.type)) {
       const data = payload.data;
@@ -89,21 +88,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   } catch (err) {
     console.error('🔥 WEBHOOK ERROR:', err.message);
     res.status(500).send('Webhook error');
-  }
-});
-
-// ============================
-// ❌ CANCEL SUBSCRIPTION
-// ============================
-router.post('/cancel-subscription', requireAuth, async (req, res) => {
-  try {
-    await supabase.from('profiles').update({
-      subscription_status: 'cancelled',
-      is_subscribed: false
-    }).eq('id', req.user.id);
-    res.json({ message: 'Subscription cancelled' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 
