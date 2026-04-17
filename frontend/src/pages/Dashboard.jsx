@@ -66,8 +66,24 @@ export default function Dashboard() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome back!</h1>
-          <p className="text-gray-500 mt-1">{profile.email}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-gray-500">{profile.email}</p>
+            {profile.is_subscribed && (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                  {profile.plan_type} PLAN
+                </span>
+                {profile.subscription_end_date && (
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">
+                    Renews: {new Date(profile.subscription_end_date).toLocaleDateString()}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
         </div>
+
         
       </div>
 
