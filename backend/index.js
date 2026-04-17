@@ -8,6 +8,8 @@ const drawsRoutes = require('./routes/draws');
 const charitiesRoutes = require('./routes/charities');
 const adminRoutes = require('./routes/admin');
 const winningsRoutes = require('./routes/winnings');
+const stripeRoutes = require('./routes/stripe');
+
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/draws', drawsRoutes);
 app.use('/api/charities', charitiesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/winnings', winningsRoutes);
+app.use('/api/stripe', stripeRoutes);
+
 
 // Listen for Render/Local (exclude Vercel)
 if (!process.env.VERCEL) {
