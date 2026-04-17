@@ -6,6 +6,8 @@ CREATE TABLE public.profiles (
   email TEXT NOT NULL,
   is_subscribed BOOLEAN DEFAULT false,
   is_admin BOOLEAN DEFAULT false,
+  plan_type TEXT DEFAULT 'monthly',
+  subscription_end_date TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -14,7 +16,8 @@ CREATE TABLE public.scores (
   user_id UUID REFERENCES public.profiles(id) NOT NULL,
   score INTEGER NOT NULL CHECK (score >= 1 AND score <= 45),
   date DATE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT unique_user_date UNIQUE (user_id, date)
 );
 
 CREATE TABLE public.charities (
@@ -28,7 +31,7 @@ CREATE TABLE public.charities (
 CREATE TABLE public.user_charities (
   user_id UUID REFERENCES public.profiles(id) PRIMARY KEY,
   charity_id UUID REFERENCES public.charities(id) NOT NULL,
-  contribution_pct INTEGER NOT NULL CHECK (contribution_pct >= 1 AND contribution_pct <= 100),
+  contribution_pct INTEGER NOT NULL CHECK (contribution_pct >= 10 AND contribution_pct <= 100),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -40,7 +43,9 @@ CREATE TABLE public.draws (
   num2 INTEGER NOT NULL,
   num3 INTEGER NOT NULL,
   num4 INTEGER NOT NULL,
-  num5 INTEGER NOT NULL
+  num5 INTEGER NOT NULL,
+  jackpot_carried_in DECIMAL DEFAULT 0,
+  jackpot_carried_out DECIMAL DEFAULT 0
 );
 
 CREATE TABLE public.winnings (
@@ -52,8 +57,13 @@ CREATE TABLE public.winnings (
   prize_amount DECIMAL NOT NULL,
   proof_url TEXT,
   is_approved BOOLEAN DEFAULT false,
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- NOTE: The storage bucket 'winner-proofs' must be created manually in Supabase dashboard
+-- with public read access for the winnings proof upload to work.
+
 
 -- 2. Setup RLS (Row Level Security) - Basic for MVP
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
