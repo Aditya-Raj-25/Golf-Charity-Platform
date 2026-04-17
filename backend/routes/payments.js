@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../lib/supabase');
 const { requireAuth } = require('../middleware/authMiddleware');
-const { DodoPayments } = require('dodopayments');
+const DodoPayments = require('dodopayments').DodoPayments || require('dodopayments').default || require('dodopayments');
 
-// ✅ Config
 const apiKey = (process.env.DODO_API_KEY || '').trim();
 const dodo = new DodoPayments({
   bearerToken: apiKey,
@@ -82,12 +81,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
           subscription_end_date: endDate.toISOString(),
           is_subscribed: true
         }).eq('id', user_id);
-
-        await supabase.from('payment_sessions').upsert({
-          session_id: data.checkout_session_id || data.session_id,
-          user_id: user_id,
-          status: 'completed'
-        });
 
         console.log(`✅ Subscription activated for ${user_id}`);
       }
