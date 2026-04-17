@@ -44,13 +44,12 @@ export default function Checkout() {
 
   if (success) {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center space-y-6 p-8 bg-white rounded-3xl shadow-xl border border-emerald-100 animate-in fade-in zoom-in">
-        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 scale-up-center">
+      <div className="max-w-md mx-auto mt-20 text-center space-y-6 p-8 bg-white rounded-2xl shadow-xl border border-emerald-100">
+        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-12 h-12" />
         </div>
-        <h1 className="text-3xl font-black text-gray-900">Payment Secured!</h1>
-        <p className="text-gray-500">Your mock transaction was successful. We received the webhook event and activated your premium access.</p>
-        <p className="text-sm text-emerald-600 font-bold uppercase tracking-widest">Redirecting...</p>
+        <h1 className="text-3xl font-bold text-gray-900">Payment Secured!</h1>
+        <p className="text-gray-500">Your subscription is now active. This was a mock transaction. Redirecting to your dashboard...</p>
       </div>
     );
   }
@@ -59,103 +58,102 @@ export default function Checkout() {
     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 py-10">
       <div className="space-y-8">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Experience Premium</h1>
-          <p className="text-gray-500 text-lg mb-6">Choose a plan to support your favorite charities and enter the weekly draw.</p>
-          
-          <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl w-fit mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Subscription</h1>
+          <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit mb-6">
             <button 
               onClick={() => setPlan('monthly')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${plan === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400'}`}
+              className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${plan === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
             >
               Monthly
             </button>
             <button 
               onClick={() => setPlan('yearly')}
-              className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${plan === 'yearly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400'}`}
+              className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${plan === 'yearly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
             >
-              Yearly
+              Yearly (Save £50)
             </button>
           </div>
+          <p className="text-gray-500 text-lg">
+            {plan === 'monthly' ? 'Monthly Stewardship Plan — £25.00/mo' : 'Yearly Stewardship Plan — £250.00/yr'}
+          </p>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-start gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+          <div className="flex items-start gap-4 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
             <Heart className="w-6 h-6 text-emerald-600 shrink-0 mt-1" />
-            <div>
-              <p className="text-sm text-emerald-900 font-black uppercase tracking-wider">Charity Impact</p>
-              <p className="text-xs text-emerald-700 font-medium">10% of your fee goes directly to your selected golf charity.</p>
-            </div>
+            <p className="text-sm text-emerald-800 font-medium">
+              A minimum of 10% of this fee goes directly to your chosen golf charity.
+            </p>
           </div>
-          <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+          <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
             <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
-            <div>
-              <p className="text-sm text-blue-900 font-black uppercase tracking-wider">Event-Driven Architecture</p>
-              <p className="text-xs text-blue-700 font-medium">We use a mock Stripe architecture to simulate real-world webhooks and subscription states.</p>
-            </div>
+            <p className="text-sm text-blue-800 font-medium">
+              Safe & Secure Mock Payments. We use an event-driven architecture to simulate real Stripe webhooks.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-6 flex flex-col justify-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4">
-            <CreditCard className="w-12 h-12 text-gray-100" />
-        </div>
-        
-        <h2 className="text-2xl font-black text-gray-900 mb-2">Checkout</h2>
+      <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 space-y-6 flex flex-col justify-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Plan</h2>
         
         <div className="grid gap-4">
-          <label 
-            className={`p-6 rounded-3xl border-2 cursor-pointer transition-all ${plan === 'monthly' ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+          <div 
+            onClick={() => setPlan('monthly')}
+            className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${plan === 'monthly' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
           >
-            <input type="radio" name="plan" className="hidden" onClick={() => setPlan('monthly')} />
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-black text-gray-900 uppercase text-xs tracking-widest">Monthly</span>
-              <span className="text-2xl font-black text-gray-900">£25</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-gray-900">Monthly</span>
+              <span className="text-2xl font-bold text-gray-900">£25</span>
             </div>
-            <p className="text-xs text-gray-400 font-bold uppercase">Billed every 30 days</p>
-          </label>
+            <p className="text-sm text-gray-500">Perfect for starters</p>
+          </div>
 
-          <label 
-            className={`p-6 rounded-3xl border-2 cursor-pointer transition-all relative ${plan === 'yearly' ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+          <div 
+            onClick={() => setPlan('yearly')}
+            className={`p-6 rounded-2xl border-2 cursor-pointer transition-all relative overflow-hidden ${plan === 'yearly' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-100 hover:border-gray-200'}`}
           >
-            <input type="radio" name="plan" className="hidden" onClick={() => setPlan('yearly')} />
-            <div className="absolute top-0 right-6 bg-emerald-600 text-white text-[8px] font-black px-3 py-1 rounded-b-lg uppercase tracking-widest">
-              Save 16%
+            <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase">
+              Best Value
             </div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-black text-gray-900 uppercase text-xs tracking-widest">Yearly</span>
-              <span className="text-2xl font-black text-gray-900">£250</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-gray-900">Yearly</span>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-gray-900">£250</span>
+                <p className="text-[10px] text-emerald-600 font-bold">SAVE £50/YR</p>
+              </div>
             </div>
-            <p className="text-xs text-gray-400 font-bold uppercase">Billed every 365 days</p>
-          </label>
+            <p className="text-sm text-gray-500">Commit to the cause</p>
+          </div>
         </div>
 
         <button 
           onClick={handlePayment}
           disabled={loading}
-          className="w-full py-5 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-xl active:scale-95 disabled:opacity-50 flex flex-col items-center justify-center gap-1 mt-4"
+          className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
         >
           {loading ? (
             <>
-              <span className="text-xs animate-pulse">PROCESSING PAYMENT SECURELY...</span>
-              <span className="text-[10px] text-gray-400 font-medium">WAITING FOR MOCK WEBHOOK DELAY (3S)</span>
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              PROCESSING SECURELY...
             </>
           ) : (
             <>
-              <span className="tracking-widest uppercase">Subscribe Now</span>
-              <span className="text-[10px] text-gray-400 font-medium tracking-normal">SECURE MOCK TRANSACTION</span>
+              <Lock className="w-4 h-4" />
+              SUBSCRIBE {plan === 'monthly' ? '£25/MO' : '£250/YR'}
             </>
           )}
         </button>
 
-        <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-          <Lock className="w-3 h-3" />
-          SSL Encrypted Simulation
-        </div>
+        <p className="text-center text-[10px] text-gray-400 uppercase font-medium">
+          Powered by Mock Stripe Webhook Architecture.
+        </p>
       </div>
 
     </div>
   );
+}
+
 }
 
 }
