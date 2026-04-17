@@ -16,6 +16,9 @@ export default function Admin() {
   const [runningDraw, setRunningDraw] = useState(false);
   const [editingUserScores, setEditingUserScores] = useState(null); // { userEmail, scores }
   const [successMsg, setSuccessMsg] = useState('');
+  const [drawMode, setDrawMode] = useState('random'); // 'random' or 'algorithmic'
+  const [reportsData, setReportsData] = useState(null);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   useEffect(() => {
     if (successMsg) {
@@ -27,6 +30,24 @@ export default function Admin() {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReports();
+    }
+  }, [activeTab]);
+
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    try {
+      const { data } = await api.get('/admin/reports');
+      setReportsData(data);
+    } catch (err) {
+      console.error('Fetch reports error:', err);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
 
   const fetchAdminData = async () => {
     try {
@@ -50,7 +71,7 @@ export default function Admin() {
     
     setRunningDraw(true);
     try {
-      const { data } = await api.post('/admin/draw');
+      const { data } = await api.post('/admin/draw', { mode: drawMode });
       setSuccessMsg(`Draw complete! Winning Numbers: ${data.winning_numbers.join(', ')}`);
       setSimResults(null);
       await fetchAdminData();
@@ -64,7 +85,7 @@ export default function Admin() {
   const handleSimulate = async () => {
     setSimulating(true);
     try {
-      const { data } = await api.post('/admin/draw/simulate');
+      const { data } = await api.post('/admin/draw/simulate', { mode: drawMode });
       setSimResults(data);
     } catch (err) {
       alert(err.response?.data?.error || err.message);
@@ -78,6 +99,16 @@ export default function Admin() {
       await api.post(`/admin/winnings/${id}/approve`);
       await fetchAdminData();
       alert('Winning approved!');
+    } catch (err) {
+      alert(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleMarkPaid = async (id) => {
+    try {
+      await api.post(`/admin/winnings/${id}/mark-paid`);
+      await fetchAdminData();
+      alert('Payment marked as paid!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     }
@@ -102,13 +133,11 @@ export default function Admin() {
 
   const handleDeleteCharity = async (id) => {
     if (!window.confirm('Are you sure you want to delete this charity?')) return;
-    console.log('Sending delete request for charity:', id);
     try {
       await api.delete(`/admin/charities/${id}`);
       await fetchAdminData();
       setSuccessMsg('Charity deleted successfully');
     } catch (err) {
-      console.error('Delete error:', err);
       alert(err.response?.data?.error || err.message);
     }
   };
@@ -116,7 +145,6 @@ export default function Admin() {
   const handleEditScore = async (scoreId, newScore, newDate) => {
     try {
       await api.put(`/admin/scores/${scoreId}`, { score: newScore, date: newDate });
-      // Refresh local state
       const updatedScores = editingUserScores.scores.map(s => s.id === scoreId ? {...s, score: newScore, date: newDate} : s);
       setEditingUserScores({...editingUserScores, scores: updatedScores});
     } catch (err) {
@@ -163,19 +191,20 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="flex space-x-2 border-b border-gray-200">
-        {['draw', 'winnings', 'charities', 'users'].map((tab) => (
+      <div className="flex space-x-1 border-b border-gray-200">
+        {['draw', 'winnings', 'charities', 'users', 'reports'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-semibold text-sm rounded-t-lg capitalize transition-colors ${
-              activeTab === tab ? 'bg-white border-t border-x border-gray-200 text-emerald-600 -mb-px' : 'text-gray-500 hover:bg-gray-50 border border-transparent border-b-0'
+            className={`px-5 py-3 font-bold text-[10px] uppercase tracking-widest rounded-t-xl transition-all ${
+              activeTab === tab ? 'bg-white border-t border-x border-gray-200 text-emerald-600 -mb-px shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]' : 'text-gray-400 hover:text-gray-600 border border-transparent border-b-0'
             }`}
           >
             {tab}
           </button>
         ))}
       </div>
+
 
       <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-sm border border-gray-200 p-8">
         
@@ -189,6 +218,21 @@ export default function Admin() {
             <p className="text-gray-500 max-w-lg mx-auto mb-8">
               Running a draw will generate 5 random numbers (1-45), check all active subscriptions, calculate matches, record winnings, and instantly email results to all participants.
             </p>
+            <div className="flex justify-center gap-2 p-1 bg-gray-100 rounded-2xl w-fit mx-auto mb-8">
+              <button 
+                onClick={() => setDrawMode('random')}
+                className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${drawMode === 'random' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-500'}`}
+              >
+                Random Mode
+              </button>
+              <button 
+                onClick={() => setDrawMode('algorithmic')}
+                className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${drawMode === 'algorithmic' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-400 hover:text-gray-500'}`}
+              >
+                Algorithmic Mode
+              </button>
+            </div>
+
             <div className="flex justify-center gap-4">
               <button 
                 onClick={handleSimulate}
@@ -219,22 +263,27 @@ export default function Admin() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-4 gap-4">
                   <div className="p-4 bg-white rounded-xl border border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Pool</p>
-                    <p className="text-2xl font-black text-gray-900">£{simResults.total_pool.toLocaleString()}</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">New Pool Contributions</p>
+                    <p className="text-xl font-black text-gray-900">£{simResults.total_pool.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-xl border border-gray-100 italic">
+                    <p className="text-[10px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">+ Carried Jackpot</p>
+                    <p className="text-xl font-black text-emerald-600/60">£{simResults.jackpot_carried_in?.toLocaleString() || 0}</p>
+                  </div>
+                  <div className="p-4 bg-emerald-600 rounded-xl text-white shadow-md">
+                    <p className="text-[10px] font-black uppercase tracking-widest mb-1 text-emerald-100">Total Match-5 Jackpot</p>
+                    <p className="text-xl font-black">£{Math.round(simResults.jackpot).toLocaleString()}</p>
                   </div>
                   <div className="p-4 bg-white rounded-xl border border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Live Jackpot</p>
-                    <p className="text-2xl font-black text-emerald-600">£{Math.round(simResults.jackpot).toLocaleString()}</p>
-                  </div>
-                  <div className="p-4 bg-white rounded-xl border border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Winners</p>
-                    <p className="text-2xl font-black text-gray-900">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Winners</p>
+                    <p className="text-xl font-black text-gray-900">
                       {Object.values(simResults.simulated_winners).reduce((a, b) => a + b, 0)}
                     </p>
                   </div>
                 </div>
+
 
                 <div className="mt-6 space-y-3">
                   <div className="flex justify-between p-3 bg-white rounded-lg text-sm">
@@ -266,8 +315,9 @@ export default function Admin() {
                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Winner</th>
                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Matches</th>
                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Prize</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Payment</th>
                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Proof</th>
-                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -275,31 +325,46 @@ export default function Admin() {
                     <tr key={w.id}>
                       <td className="py-4 px-4 font-medium text-gray-900">{w.profile?.email}</td>
                       <td className="py-4 px-4 text-sm text-gray-600">{w.matches} Numbers</td>
-                      <td className="py-4 px-4 font-bold text-emerald-600">${w.prize_amount}</td>
+                      <td className="py-4 px-4 font-bold text-emerald-600">£{w.prize_amount}</td>
                       <td className="py-4 px-4">
-                        {w.proof_url ? (
-                          <a href={w.proof_url} target="_blank" rel="noreferrer" className="text-blue-600 underline text-sm">View Proof</a>
-                        ) : (
-                          <span className="text-gray-400 text-xs italic">Not uploaded</span>
-                        )}
+                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${w.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                           {w.payment_status}
+                         </span>
                       </td>
                       <td className="py-4 px-4">
-                        {w.is_approved ? (
-                          <span className="text-green-600 font-bold text-sm bg-green-50 px-2 py-1 rounded">Approved</span>
+                        {w.proof_url ? (
+                          <a href={w.proof_url} target="_blank" rel="noreferrer" className="text-blue-600 underline text-[10px] font-bold uppercase tracking-widest">View</a>
                         ) : (
-                          <button 
-                            disabled={!w.proof_url}
-                            onClick={() => handleApproveWinning(w.id)}
-                            className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
-                              w.proof_url ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            VERIFY
-                          </button>
+                          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">None</span>
                         )}
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          {!w.is_approved ? (
+                            <button 
+                              disabled={!w.proof_url}
+                              onClick={() => handleApproveWinning(w.id)}
+                              className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded transition-all ${
+                                w.proof_url ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              }`}
+                            >
+                              Approve
+                            </button>
+                          ) : w.payment_status !== 'paid' ? (
+                            <button 
+                              onClick={() => handleMarkPaid(w.id)}
+                              className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 rounded shadow-sm"
+                            >
+                              Mark Paid
+                            </button>
+                          ) : (
+                            <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-widest">Settled</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
+
                   {winnings.length === 0 && (
                     <tr><td colSpan="5" className="py-12 text-center text-gray-400 italic">No winnings recorded yet.</td></tr>
                   )}
@@ -418,7 +483,91 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* REPORTS TAB */}
+        {activeTab === 'reports' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="text-xl font-bold text-gray-900 border-b pb-4">Platform Insights</h2>
+            
+            {loadingReports ? (
+              <div className="py-20 text-center text-gray-400 font-bold uppercase tracking-widest animate-pulse">
+                Generating Reports...
+              </div>
+            ) : reportsData ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">User base</p>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-3xl font-black text-gray-900">{reportsData.total_users}</p>
+                      <p className="text-xs text-gray-500 font-medium">Registered Users</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-black text-emerald-600">{reportsData.active_users}</p>
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase">Active Subs</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-emerald-600 rounded-3xl text-white shadow-lg overflow-hidden relative">
+                   <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest mb-2 relative z-10">Financial Impact</p>
+                   <div className="flex justify-between items-end relative z-10">
+                    <div>
+                      <p className="text-3xl font-black">£{reportsData.total_prize_distributed.toLocaleString()}</p>
+                      <p className="text-xs text-emerald-100 font-medium tracking-tight">Prizes Distributed</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-black text-emerald-200">£{reportsData.total_charity_contributions.toLocaleString()}</p>
+                      <p className="text-[10px] text-emerald-200 font-bold uppercase">Charity/mo</p>
+                    </div>
+                  </div>
+                  <ShieldCheck className="absolute -bottom-4 -right-4 w-24 h-24 text-white/10" />
+                </div>
+
+                <div className="p-6 bg-gray-900 rounded-3xl text-white shadow-lg">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Draw Stats</p>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-3xl font-black">{reportsData.total_draws}</p>
+                      <p className="text-xs text-gray-500 font-medium">Draws Run</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Last Draw</p>
+                      <p className="text-xs font-bold text-emerald-400">{reportsData.last_draw_date ? new Date(reportsData.last_draw_date).toLocaleDateString() : 'Never'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-3 p-8 bg-white rounded-3xl border border-gray-100 shadow-xl mt-4">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6 border-b pb-4">Winners Breakdown (All-Time)</h3>
+                  <div className="grid grid-cols-3 gap-8">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 font-black text-xl">5</div>
+                      <p className="text-2xl font-black text-gray-900">{reportsData.winners_breakdown.match5}</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Jackpot Winners</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 font-black text-xl">4</div>
+                      <p className="text-2xl font-black text-gray-900">{reportsData.winners_breakdown.match4}</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Tier 2 Winners</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-3 font-black text-xl">3</div>
+                      <p className="text-2xl font-black text-gray-900">{reportsData.winners_breakdown.match3}</p>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Tier 3 Winners</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-20 text-center text-red-400 font-bold uppercase tracking-widest">
+                Failed to load reports.
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
 
       {/* SCORE EDIT MODAL */}
       {editingUserScores && (
