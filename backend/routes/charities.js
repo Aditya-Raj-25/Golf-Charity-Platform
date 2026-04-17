@@ -33,6 +33,11 @@ router.post('/select', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Charity ID and contribution percentage are required' });
   }
 
+  if (contribution_pct < 10) {
+    return res.status(400).json({ error: 'Minimum contribution is 10%' });
+  }
+
+
   const { data, error } = await supabase
     .from('user_charities')
     .upsert({ user_id: req.user.id, charity_id, contribution_pct })
