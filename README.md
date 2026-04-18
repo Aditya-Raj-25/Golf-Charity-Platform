@@ -8,34 +8,29 @@ Users subscribe to the platform, enter their last 5 golf scores in Stableford fo
 
 Screenshots
 
-Landing page — hero section with subscribe CTA
+Dashboard — hero section with subscribe CTA
 
-<img src = "./images/landing-page.png">
-
-User dashboard — subscription status, scores, charity, winnings overview
-
-<img src = "./images/dashboard.png">
+<img src = 'Dashboard.png'/>
 
 Score entry — rolling 5-score logic with date validation
 
-<img src = "./images/score-entry.png">
+<img src = "Userscores.png"/>
 
 Charity selection — contribution percentage slider with impact preview
 
-<img src = "./images/charity-selection.png">
-
-Monthly draw results page
-
-<img src = "./images/monthly-draw.png">
-
-Admin panel — users, draw engine, charities, winner verification, reports
-
-<img src = "./images/admin-panel.png">
+<img src = "charity.png"/>
 
 Payment 
 
-<img src = "./images/payment.png">
-<img src = "./images/payment-2.png">
+<img src = "payment.png"/>
+
+Dodo Payment
+<img src = "Dodopayment.png"/>
+
+Admin panel — users, draw engine, charities, winner verification, reports
+
+<img src = "Admin.png"/>
+
 
 Tech Stack
 LayerTechnologyFrontendReact 18, Vite, Tailwind CSSBackendNode.js, Express.jsDatabaseSupabase (PostgreSQL)AuthSupabase Auth (JWT)PaymentsDodoPayments (test mode)File StorageSupabase StorageEmailSendGridDeploymentVercel (frontend + backend)
